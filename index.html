@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- PWA 설치를 위한 메타 태그 -->
+    <!-- PWA 설치 메타 태그 (Manifest는 React 코드 내에서 인라인으로 처리됨) -->
     <meta name="theme-color" content="#4F46E5">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,16 +11,18 @@
     <meta name="description" content="시편 119편 히브리어 단어별 학습 앱">
     <title>시편 119편 히브리어 학습</title>
 
-    <!-- PWA Manifest와 Icon Data URL을 인라인으로 정의 -->
-    <link rel="manifest" id="manifest-pwa">
+    <!-- Manifest 및 Icon Data URL을 인라인으로 정의 -->
+    <!-- [수정]: Service Worker 코드를 제거했으므로 manifest link는 사용하지 않음 -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='75' font-size='80'%3E📖%3C/text%3E%3C/svg%3E">
     
-    <!-- Tailwind CSS 및 React 라이브러리 로드 -->
+    <!-- Tailwind CSS 및 React 라이브러리 로드 (순서 중요) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- [수정]: crossorigin 속성을 제거하여 UMD 로딩 안정성 확보 -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/lucide-react@latest"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
 
     <style>
         body {
@@ -41,12 +43,25 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // React Component와 Logic (Psalm119HebrewLearner.jsx의 내용)
+        // React Component와 Logic
 
         const { useState, useMemo, useEffect } = React;
-        // [수정된 부분]: UMD 번들에서 'lucide' 대신 'LucideReact' 글로벌 변수를 사용하는 경우가 많으므로 변경했습니다.
-        // 이는 'ReferenceError'와 'forwardRef' 관련 TypeError를 해결하는 데 도움이 됩니다.
-        const { ChevronLeft, ChevronRight, BookOpen, X, Home } = LucideReact; 
+        
+        // UMD 번들이 노출하는 전역 변수에서 아이콘을 안전하게 가져옵니다.
+        const LucideReactGlobal = window.LucideReact || window.lucide || {}; 
+
+        const { ChevronLeft, ChevronRight, BookOpen, X, Home } = LucideReactGlobal;
+
+        // 아이콘 컴포넌트가 로드되지 않았을 경우 대체 컴포넌트 정의
+        const SafeIcon = (Icon, defaultSize = 24) => 
+            (props) => Icon ? <Icon {...props} /> : <div style={{ width: defaultSize, height: defaultSize, background: 'silver', borderRadius: '4px' }} />;
+        
+        const SChevronLeft = SafeIcon(ChevronLeft);
+        const SChevronRight = SafeIcon(ChevronRight);
+        const SBookOpen = SafeIcon(BookOpen);
+        const SX = SafeIcon(X);
+        const SHome = SafeIcon(Home);
+
 
         // --- 데이터 정의 (시편 119편의 일부 절만 포함) ---
         const PSALM_119_DATA = [
@@ -215,7 +230,7 @@
                 <div className="flex justify-between items-start border-b pb-3 mb-4">
                   <h3 className="text-3xl font-bold text-gray-800 hebrew-text" dir="rtl">{selectedWord.h}</h3>
                   <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-100">
-                    <X size={24} />
+                    <SX size={24} />
                   </button>
                 </div>
 
@@ -277,7 +292,7 @@
             }
           };
 
-          // 렌더링을 위해 히브리어 텍스트를 단어 배열로 분리 (단어별 띄어쓰기 기준으로만 단순 분리)
+          // 렌더링을 위해 히브리어 텍스트를 단어 배열로 분리
           const hebrewWords = useMemo(() => {
               const text = currentVerse.hebrew;
               const dataWords = currentVerse.words;
@@ -287,7 +302,7 @@
               
               let wordIndex = 0;
               return segments.map((segment, index) => {
-                  // 히브리어 단어이거나 단어 + 구두점인 경우 (단어 객체와 매핑)
+                  // 히브리어 단어이거나 단어 + 구두점인 경우
                   if (segment.match(/[\u0590-\u05FF]/) && !segment.trim().match(/^[ \u0590-\u05FF]+$/)) { 
                       const wordData = dataWords[wordIndex];
                       wordIndex++;
@@ -317,7 +332,7 @@
               <header className="bg-indigo-600 text-white shadow-lg p-4 sticky top-0 z-10">
                 <div className="flex justify-between items-center max-w-2xl mx-auto">
                   <div className="flex items-center space-x-2">
-                    <BookOpen size={24} />
+                    <SBookOpen size={24} />
                     <h1 className="text-xl font-bold">시편 119편 히브리어 학습</h1>
                   </div>
                   <button 
@@ -325,7 +340,7 @@
                     onClick={() => setCurrentVerseNum(1)}
                     title="첫 절로 이동"
                   >
-                    <Home size={20} />
+                    <SHome size={20} />
                   </button>
                 </div>
               </header>
@@ -364,7 +379,7 @@
                     className="flex items-center justify-center w-full py-3 bg-gray-200 text-gray-700 font-bold rounded-lg shadow-md hover:bg-gray-300 disabled:opacity-50 transition-all active:bg-gray-400"
                     aria-label="이전 절"
                   >
-                    <ChevronLeft size={20} className="mr-1" /> 이전 절
+                    <SChevronLeft size={20} className="mr-1" /> 이전 절
                   </button>
                   
                   <button 
@@ -373,7 +388,7 @@
                     className="flex items-center justify-center w-full py-3 bg-indigo-500 text-white font-bold rounded-lg shadow-md hover:bg-indigo-600 disabled:opacity-50 transition-all active:bg-indigo-700"
                     aria-label="다음 절"
                   >
-                    다음 절 <ChevronRight size={20} className="ml-1" />
+                    다음 절 <SChevronRight size={20} className="ml-1" />
                   </button>
                 </div>
 
@@ -394,89 +409,6 @@
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 
-    <script>
-        // PWA Manifest와 Service Worker를 인라인으로 처리하여 단일 파일로 동작하도록 설정
-
-        // 1. Manifest 파일 역할을 하는 Blob 생성 및 URL 설정
-        const manifestData = {
-          "name": "시편 119편 히브리어 학습",
-          "short_name": "시편119",
-          "description": "시편 119편 히브리어 단어별 학습 앱",
-          "start_url": "./psalm119_pwa_single.html", // 이 파일의 이름으로 변경
-          "display": "standalone",
-          "background_color": "#F9FAFB",
-          "theme_color": "#4F46E5",
-          "orientation": "portrait",
-          "icons": [
-            {
-              "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%234F46E5'/%3E%3Ctext x='256' y='380' font-size='280' text-anchor='middle' fill='white'%3E📖%3C/text%3E%3C/svg%3E",
-              "sizes": "512x512",
-              "type": "image/svg+xml",
-              "purpose": "any maskable"
-            }
-          ]
-        };
-        const manifestBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
-        const manifestUrl = URL.createObjectURL(manifestBlob);
-        document.getElementById('manifest-pwa').setAttribute('href', manifestUrl);
-
-        // 2. Service Worker 인라인 정의 및 등록
-        const swCode = `
-            const CACHE_NAME = 'psalm119-v2';
-            const urlsToCache = [
-                './psalm119_pwa_single.html', // 이 파일 자체를 캐시
-                // 외부 라이브러리도 캐시하려면 여기에 추가해야 합니다.
-            ];
-
-            // 설치: 캐시 파일 목록에 필요한 리소스를 저장
-            self.addEventListener('install', event => {
-              event.waitUntil(
-                caches.open(CACHE_NAME)
-                  .then(cache => cache.addAll(urlsToCache))
-                  .catch(err => console.error('Service Worker Install Error:', err))
-              );
-            });
-
-            // 활성화: 이전 버전 캐시 정리
-            self.addEventListener('activate', event => {
-              event.waitUntil(
-                caches.keys().then(cacheNames => {
-                  return Promise.all(
-                    cacheNames.map(cacheName => {
-                      if (cacheName !== CACHE_NAME) {
-                        return caches.delete(cacheName);
-                      }
-                    })
-                  );
-                })
-              );
-            });
-
-            // 요청 가로채기: 네트워크 연결이 없을 때 캐시된 리소스로 응답
-            self.addEventListener('fetch', event => {
-              // PWA 설치를 위해 메인 HTML 파일만 캐시에서 로드하도록 단순화
-              if (event.request.url.includes('psalm119_pwa_single.html')) {
-                event.respondWith(
-                    caches.match(event.request)
-                      .then(response => response || fetch(event.request))
-                );
-              }
-            });
-        `;
-
-        const swBlob = new Blob([swCode], { type: 'application/javascript' });
-        const swUrl = URL.createObjectURL(swBlob);
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register(swUrl)
-                    .then(reg => {
-                        console.log('Service Worker 등록 성공:', reg.scope);
-                        // Service Worker가 등록되면 PWA 설치 프롬프트가 더 잘 작동합니다.
-                    })
-                    .catch(err => console.log('Service Worker 등록 실패:', err));
-            });
-        }
-    </script>
+    <!-- [수정]: Service Worker/PWA 관련 코드를 모두 제거하여 라이브러리 로딩 충돌을 방지합니다. -->
 </body>
 </html>
