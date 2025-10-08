@@ -2,421 +2,481 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>시편 119편 히브리어 학습 도구</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- PWA 설치를 위한 메타 태그 -->
+    <meta name="theme-color" content="#4F46E5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="시편119">
+    <meta name="description" content="시편 119편 히브리어 단어별 학습 앱">
+    <title>시편 119편 히브리어 학습</title>
+
+    <!-- PWA Manifest와 Icon Data URL을 인라인으로 정의 -->
+    <link rel="manifest" id="manifest-pwa">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='75' font-size='80'%3E📖%3C/text%3E%3C/svg%3E">
+    
+    <!-- Tailwind CSS 및 React 라이브러리 로드 -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Inter Font and Hebrew Font Styling -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
+
     <style>
         body {
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: touch;
             font-family: 'Inter', sans-serif;
-            background-color: #111827; /* Darker background for depth */
         }
-        /* Style for the Hebrew text, ensuring it displays correctly */
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* 히브리어 폰트 스타일 */
         .hebrew-text {
-            font-family: 'Times New Roman', serif; /* Use a standard serif font that supports Hebrew */
-            direction: rtl; /* Right-to-Left for Hebrew */
-            unicode-bidi: embed;
-            font-size: 1.35rem; /* Slightly larger for mobile readability */
-            font-weight: 700;
-            line-height: 1.5;
-        }
-        /* Custom scrollbar for aesthetic */
-        .content-container::-webkit-scrollbar {
-            width: 6px;
-        }
-        .content-container::-webkit-scrollbar-thumb {
-            background-color: #374151;
-            border-radius: 10px;
-        }
-        .section-separator {
-            padding-top: 2rem;
-            margin-top: 1rem;
+            font-family: 'David', 'Ezra SIL', 'Times New Roman', serif;
         }
     </style>
 </head>
-<body class="text-gray-200">
+<body>
+    <div id="root"></div>
 
-    <div id="app" class="min-h-screen flex flex-col items-center p-2 sm:p-4">
-        
-        <!-- Header -->
-        <header class="text-center mb-6 w-full max-w-4xl">
-            <h1 class="text-3xl sm:text-4xl font-extrabold text-teal-400 mb-1">시편 119편 전체 히브리어 학습기</h1>
-            <h2 class="text-lg font-light text-gray-400">22개 문단, 176절의 말씀을 읽고 묵상해 보세요</h2>
-        </header>
+    <script type="text/babel">
+        // React Component와 Logic (Psalm119HebrewLearner.jsx의 내용)
 
-        <!-- Control Panel -->
-        <div class="w-full max-w-4xl bg-gray-800 p-4 rounded-xl shadow-lg flex flex-col sm:flex-row justify-between items-center mb-6 space-y-3 sm:space-y-0 sm:space-x-4">
-            
-            <!-- Toggle Button -->
-            <button id="toggle-translation-btn" onclick="toggleVisibility()" 
-                    class="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition duration-200 shadow-md flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                    <!-- 토글 아이콘 (유효한 경로) -->
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-8a1 1 0 002 0V7.414l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 7.414V10z" clip-rule="evenodd" />
-                </svg>
-                <span id="toggle-text">개역개정 / 단어 뜻 가리기</span>
-            </button>
-            
-            <!-- Filter Input -->
-            <input type="text" id="filter-input" onkeyup="filterVerses()" 
-                   placeholder="히브리어 단어 또는 절 검색 (예: 120)" 
-                   class="w-full sm:w-2/3 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500">
-        </div>
+        const { useState, useMemo, useEffect } = React;
+        // [수정된 부분]: UMD 번들에서 'lucide' 대신 'LucideReact' 글로벌 변수를 사용하는 경우가 많으므로 변경했습니다.
+        // 이는 'ReferenceError'와 'forwardRef' 관련 TypeError를 해결하는 데 도움이 됩니다.
+        const { ChevronLeft, ChevronRight, BookOpen, X, Home } = LucideReact; 
 
-        <!-- Main Content Area -->
-        <main class="w-full max-w-4xl bg-gray-800 p-4 rounded-xl shadow-2xl">
-            <h3 class="text-xl font-semibold mb-4 border-b border-gray-700 pb-2 text-yellow-400">구절별 상세 학습 목록 (총 176절)</h3>
-            
-            <div id="psalm-analysis-container" class="content-container overflow-y-auto max-h-[75vh]">
-                <!-- Verse cards will be injected here -->
-                <p class="text-center text-gray-400 py-8">데이터 로딩 중...</p>
-            </div>
-        </main>
-    </div>
-
-    <script>
-        // 시편 119편 (1-176절) 전체 학습 데이터
-        const psalmData = [
-            // Aleph Section (א) - 1-8
-            { id: 1, section: 'א (Aleph)', hebrew: 'אַשְׁרֵי תְמִימֵי־דָרֶךְ הַהֹלְכִים בְּתוֹרַת יְהוָה', pronunciation: "Ashrei temimei-darekh haholekhim betorat Adonai", korean: '행위가 온전하여 여호와의 율법을 따라 행하는 자들은 복이 있음이여', words: "**אַשְׁרֵי (Ashrei):** 복이 있는. **תָמִים (Tamim):** 온전한. **דֶּרֶךְ (Derekh):** 길. **תּוֹרָה (Torah):** 율법." },
-            { id: 2, section: 'א (Aleph)', hebrew: 'אַשְׁרֵי שֹׁמְרֵי עֵדֹתָיו בְּכָל־לֵב יִדְרְשׁוּהוּ', pronunciation: "Ashrei shomrei 'edotav bekol-lev yidreshuhu", korean: '여호와의 증거들을 지키고 전심으로 여호와를 구하는 자는 복이 있도다', words: "**שָׁמַר (Shamar):** 지키다. **עֵדוּת (Edut):** 증거. **לֵב (Lev):** 마음. **דָּרַשׁ (Darash):** 구하다." },
-            { id: 3, section: 'א (Aleph)', hebrew: 'אַף לֹא־פָעֲלוּ עַוְלָה בִּדְרָכָיו הָלָכוּ', pronunciation: "Af lo-fa'alu 'avlah bidrakhav halakhu", korean: '또 저희는 불의를 행하지 아니하고 주의 도를 행하는도다', words: "**פָּעַל (Pa'al):** 행하다. **עַוְלָה ('Avlah):** 불의, 사악. **הָלַךְ (Halakh):** 행하다, 가다." },
-            { id: 4, section: 'א (Aleph)', hebrew: 'אַתָּה צִוִּיתָ פִקֻּדֶיךָ לִשְׁמֹר מְאֹד', pronunciation: "Attah tzivvita piqqudekha lishmor me'od", korean: '주께서 명령하사 주의 법도를 열심히 지키게 하셨나이다', words: "**צָוָה (Tzavah):** 명령하다. **פִּקּוּד (Piqqud):** 법도. **שָׁמַר (Shamar):** 지키다." },
-            { id: 5, section: 'א (Aleph)', hebrew: 'אַחֲלַי יִכֹּנוּ דְרָכָי לִשְׁמֹר חֻקֶּיךָ', pronunciation: "Ahalai yikkonu drakhay lishmor huqqeykha", korean: '내 길을 곧게 하사 주의 율례를 지키게 하소서', words: "**כּוּן (Kun):** 곧게 하다. **חֹק (Hoq):** 율례, 규례." },
-            { id: 6, section: 'א (Aleph)', hebrew: 'אָז לֹא אֵבוֹשׁ בְּהַבִּיטִי אֶל־כָּל־מִצְוֹתֶיךָ', pronunciation: "Az lo evosh behabbiti el-kol-mitzvoteikha", korean: '내가 주의 모든 계명에 주의할 때에는 부끄럽지 아니하리이다', words: "**בּוֹשׁ (Bosh):** 부끄러워하다. **מִצְוָה (Mitzvah):** 계명." },
-            { id: 7, section: 'א (Aleph)', hebrew: 'אוֹדְךָ בְּיֹשֶׁר לֵבָב בְּלָמְדִי מִשְׁפְּטֵי צִדְקֶךָ', pronunciation: "Odekha beyosher levav belomdi mishpetei tzidqekha", korean: '내가 주의 의로운 규례들을 배울 때에는 정직한 마음으로 주께 감사하리이다', words: "**יֹשֶׁר (Yosher):** 정직. **לֵבָב (Levav):** 마음. **מִשְׁפָּט (Mishpat):** 규례. **צֶדֶק (Tzedeq):** 의로움." },
-            { id: 8, section: 'א (Aleph)', hebrew: 'אֶת־חֻקֶּיךָ אֶשְׁמֹר אַל־תַּעַזְבֵנִי עַד־מְאֹד', pronunciation: "Et-huqqeykha eshmor al-ta'azveni 'ad-me'od", korean: '내가 주의 율례들을 지키오니 나를 온전히 버리지 마옵소서', words: "**שָׁמַר (Shamar):** 지키다. **עָזַב ('Azav):** 버리다." },
-            
-            // Beth Section (ב) - 9-16
-            { id: 9, section: 'ב (Beth)', hebrew: 'בַּמֶּה יְזַכֶּה־נַּעַר אֶת־אָרְחוֹ לִשְׁמֹר כִּדְבָרֶךָ', pronunciation: "Bamme yezakkeh-na'ar et-'orho lishmor kidvarekha", korean: '청년이 무엇으로 그의 행실을 깨끗하게 할 수 있으리이까 주의 말씀만 지킬 따름이니이다', words: "**נַעַר (Na'ar):** 청년. **זָכָה (Zakhah):** 깨끗하게 하다. **דָּבָר (Davar):** 말씀." },
-            { id: 10, section: 'ב (Beth)', hebrew: 'בְּכָל־לִבִּי דְרַשְׁתִּיךָ אַל־תַּשְׁגֵּנִי מִמִּצְוֹתֶיךָ', pronunciation: "Bekhol-libbi derashtikha al-tashgeni mimmitzvoteikha", korean: '내가 전심으로 주를 찾았사오니 주의 계명에서 떠나지 말게 하소서', words: "**דָּרַשׁ (Darash):** 찾다. **שָׁגָה (Shagah):** 떠나다, 잘못하다. **מִצְוָה (Mitzvah):** 계명." },
-            { id: 11, section: 'ב (Beth)', hebrew: 'בְּלִבִּי צָפַנְתִּי אִמְרָתֶךָ לְמַעַן לֹא אֶחֱטָא־לָךְ', pronunciation: "Belibbi tzofanti imratekha lema'an lo 'eheta-lakh", korean: '내가 주께 범죄하지 아니하려 하여 주의 말씀을 내 마음에 두었나이다', words: "**צָפַן (Tzafan):** 숨기다, 간직하다. **אִמְרָה (Imrah):** 말씀. **חָטָא (Hata):** 죄를 짓다." },
-            { id: 12, section: 'ב (Beth)', hebrew: 'בָּרוּךְ אַתָּה יְהוָה לַמְּדֵנִי חֻקֶּיךָ', pronunciation: "Barukh attah Adonai lammedeni huqqeykha", korean: '여호와여 찬송을 받으실지니 주의 율례들을 내게 가르치소서', words: "**בָּרוּךְ (Barukh):** 찬송할지라. **לָמַד (Lamad):** 가르치다. **חֹק (Hoq):** 율례." },
-            { id: 13, section: 'ב (Beth)', hebrew: 'בִּשְׂפָתַי סִפַּרְתִּי כֹּל מִשְׁפְּטֵי פִיךָ', pronunciation: "Bisfatay sipparti kol mishpetei fika", korean: '주의 입의 모든 규례들을 나의 입술로 전하였으며', words: "**שָׂפָה (Safah):** 입술. **סָפַר (Safar):** 전하다. **מִשְׁפָּט (Mishpat):** 규례." },
-            { id: 14, section: 'ב (Beth)', hebrew: 'בְּדֶרֶךְ עֵדְוֹתֶיךָ שַׂשְׂתִּי כְּעַל כָּל־הוֹן', pronunciation: "Bederekh 'edoteykha sasti ke'al kol-hon", korean: '내가 모든 재물을 즐거워함 같이 주의 증거들의 도를 즐거워하였나이다', words: "**עֵדוּת (Edut):** 증거. **שׂוּשׂ (Sus):** 기뻐하다. **הוֹן (Hon):** 재물." },
-            { id: 15, section: 'ב (Beth)', hebrew: 'בְּפִקּוּדֶיךָ אָשִׂיחָה וְאַבִּיטָה אֹרְחֹתֶיךָ', pronunciation: "Befiqqudekha 'asicha ve'abbitah 'orhoteykha", korean: '내가 주의 법도들을 읊조리며 주의 길에 주의하며', words: "**פִּקּוּד (Piqqud):** 법도. **שִׂיחַ (Siah):** 읊조리다. **נָבַט (Navat):** 주의하다." },
-            { id: 16, section: 'ב (Beth)', hebrew: 'בְּחֻקֹּתֶיךָ אֶשְׁתַּעֲשָׁע לֹא אֶשְׁכַּח דְּבָרֶךָ', pronunciation: "Behuqqoteykha eshta'asha lo eshkakh devarekha", korean: '주의 율례들을 즐거워하며 주의 말씀을 잊지 아니하리이다', words: "**חֻקָּה (Huqqah):** 율례. **שָׁעַע (Sha'a):** 즐거워하다. **שָׁכַח (Shakhah):** 잊다." },
-
-            // Gimel Section (ג) - 17-24
-            { id: 17, section: 'ג (Gimel)', hebrew: 'גְּמֹל עַל־עַבְדְּךָ אֶחְיֶה וְאֶשְׁמְרָה דְבָרֶךָ', pronunciation: "Gemol 'al-'avdekha 'ehyeh ve'eshm'rah devarekha", korean: '주의 종을 후대하여 살게 하소서 그리하시면 주의 말씀을 지키리이다', words: "**גָּמַל (Gamal):** 후대하다. **עֶבֶד (Eved):** 종. **דָּבָר (Davar):** 말씀." },
-            { id: 18, section: 'ג (Gimel)', hebrew: 'גַּל־עֵינַי וְאַבִּיטָה נִפְלָאוֹת מִתּוֹרָתֶךָ', pronunciation: "Gal-'einay ve'abbitah nifla'ot mittorateka", korean: '내 눈을 열어서 주의 율법에서 놀라운 것을 보게 하소서', words: "**גָּלָה (Galah):** 열다. **נִפְלָא (Nifla):** 놀라운 일. **תּוֹרָה (Torah):** 율법." },
-            { id: 19, section: 'ג (Gimel)', hebrew: 'גֵּר אָנֹכִי בָאָרֶץ אַל־תַּסְתֵּר מִמֶּנִּי מִצְוֹתֶיךָ', pronunciation: "Ger anokhi va'aretz al-taster mimmenni mitzvotekha", korean: '나는 땅에서 나그네이오니 주의 계명들을 내게 숨기지 마소서', words: "**גֵּר (Ger):** 나그네. **סָתַר (Satar):** 숨기다. **מִצְוָה (Mitzvah):** 계명." },
-            { id: 20, section: 'ג (Gimel)', hebrew: 'גָּרְסָה נַפְשִׁי לְתַאֲבָה אֶל־מִשְׁפָּטֶיךָ בְכָל־עֵת', pronunciation: "Garsah nafshi leta'avah el-mishpateykha bekol-'et", korean: '주의 규례들을 항상 사모함으로 내 마음이 상하나이다', words: "**גָּרַס (Garas):** 상하다. **נֶפֶשׁ (Nefesh):** 마음, 영혼. **מִשְׁפָּט (Mishpat):** 규례." },
-            { id: 21, section: 'ג (Gimel)', hebrew: 'גָּעַרְתָּ זֵדִים אֲרוּרִים הַשֹּׁגִים מִמִּצְוֹתֶיךָ', pronunciation: "Ga'arta zedim arurim hashshogim mimmitzvoteikha", korean: '교만하여 저주를 받은 자들 곧 주의 계명에서 떠나는 자들을 주께서 꾸짖으셨나이다', words: "**גָּעַר (Ga'ar):** 꾸짖다. **זֵד (Zed):** 교만한 자. **אָרוּר (Arur):** 저주받은." },
-            { id: 22, section: 'ג (Gimel)', hebrew: 'גַּל מֵעָלַי חֶרְפָּה וָבוּז כִּי עֵדֹתֶיךָ נָצָרְתִּי', pronunciation: "Gal me'alai herpah vavuz ki 'edoteykha natzarti", korean: '내가 주의 증거들을 지켰사오니 비방과 멸시를 내게서 떠나게 하소서', words: "**חֶרְפָּה (Herpah):** 비방, 수치. **בּוּז (Buz):** 멸시. **עֵדוּת (Edut):** 증거." },
-            { id: 23, section: 'ג (Gimel)', hebrew: 'גַּם יָשְׁבוּ שָׂרִים דִּבְּרוּ־בִי עַבְדְּךָ יָשִׂיחַ בְּחֻקֶּיךָ', pronunciation: "Gam yashvu sarim dibberu-vi 'avdekha yasiah behuqqeykha", korean: '고관들도 앉아서 나를 비방하였사오나 주의 종은 주의 율례들을 묵상하였나이다', words: "**שַׂר (Sar):** 고관. **דָּבַר (Davar):** 말하다. **שִׂיחַ (Siah):** 묵상하다. **חֹק (Hoq):** 율례." },
-            { id: 24, section: 'ג (Gimel)', hebrew: 'גַּם־עֵדֹתֶיךָ שַׁעֲשֻׁעָי אַנְשֵׁי עֲצָתִי', pronunciation: "Gam-'edoteykha sha'ashu'ay anshei 'atzati", korean: '주의 증거들은 나의 즐거움이요 나의 조언자니이다', words: "**שַׁעֲשֻׁעִים (Sha'ashu'im):** 즐거움. **עֵצָה ('Etzah):** 조언, 충고." },
-
-            // Daleth Section (ד) - 25-32
-            { id: 25, section: 'ד (Daleth)', hebrew: 'דָּבְקָה לֶעָפָר נַפְשִׁי חַיֵּנִי כִדְבָרֶךָ', pronunciation: "Davqah le'afar nafshi hayyeni khidvarekha", korean: '내 영혼이 진토에 붙었사오니 주의 말씀대로 나를 소성하게 하소서', words: "**דָּבַק (Davaq):** 붙다. **עָפָר ('Afar):** 진토, 흙. **חָיָה (Hayah):** 소성하게 하다." },
-            { id: 26, section: 'ד (Daleth)', hebrew: 'דְּרָכַי סִפַּרְתִּי וַתַּעֲנֵנִי לַמְּדֵנִי חֻקֶּיךָ', pronunciation: "Derakhay sipparti vata'aneni lammedeni huqqeykha", korean: '내가 나의 행위를 아뢰매 주께서 내게 응답하셨사오니 주의 율례들을 내게 가르치소서', words: "**סָפַר (Safar):** 아뢰다. **עָנָה ('Anah):** 응답하다. **לָמַד (Lamad):** 가르치다." },
-            { id: 27, section: 'ד (Daleth)', hebrew: 'דֶּרֶךְ פִּקּוּדֶיךָ הֲבִינֵנִי וְאָשִׂיחָה בְּנִפְלְאוֹתֶיךָ', pronunciation: "Derekh piqqudekha havinenni ve'asicha benifle'oteykha", korean: '나에게 주의 법도들의 길을 깨닫게 하여 주소서 그리하시면 내가 주의 기이한 일들을 묵상하리이다', words: "**בִּין (Bin):** 깨닫게 하다. **פִּקּוּד (Piqqud):** 법도. **נִפְלָא (Nifla):** 기이한 일." },
-            { id: 28, section: 'ד (Daleth)', hebrew: 'דָּלְפָה נַפְשִׁי מִתּוּגָה קַיְּמֵנִי כִדְבָרֶךָ', pronunciation: "Dalefah nafshi mittugah qayyemeni khidvarekha", korean: '내 영혼이 근심함으로 녹사오니 주의 말씀대로 나를 세우소서', words: "**דָּלַף (Dalaf):** 녹다. **תּוּגָה (Tugah):** 근심. **קוּם (Qum):** 세우다, 확고하게 하다." },
-            { id: 29, section: 'ד (Daleth)', hebrew: 'דֶּרֶךְ־שֶׁקֶר הָסֵר מִמֶּנִּי וְתוֹרָתְךָ חָנֵּנִי', pronunciation: "Derekh-sheqer haser mimmenni vetoratkha hanneni", korean: '거짓 행위를 내게서 떠나게 하시고 주의 율법을 내게 은혜로 베푸소서', words: "**שֶׁקֶר (Sheqer):** 거짓. **חָנַן (Hanan):** 은혜를 베풀다. **תּוֹרָה (Torah):** 율법." },
-            { id: 30, section: 'ד (Daleth)', hebrew: 'דֶּרֶךְ אֱמוּנָה בָחָרְתִּי מִשְׁפָּטֶיךָ שִׁוִּיתִי', pronunciation: "Derekh 'emunah vaharti mishpateykha shivviti", korean: '내가 성실한 길을 택하고 주의 규례들을 내 앞에 두었나이다', words: "**אֱמוּנָה (Emunah):** 성실. **בָּחַר (Bahar):** 택하다. **שָׁוָה (Shavah):** 두다, 놓다." },
-            { id: 31, section: 'ד (Daleth)', hebrew: 'דָּבַקְתִּי בְעֵדְוֹתֶיךָ יְהוָה אַל־תְּבִישֵׁנִי', pronunciation: "Davaqti ve'edoteykha Adonai al-tevisheni", korean: '내가 주의 증거들에 매달리오니 여호와여 나로 부끄럽지 않게 하소서', words: "**דָּבַק (Davaq):** 매달리다. **עֵדוּת (Edut):** 증거. **בּוֹשׁ (Bosh):** 부끄러워하다." },
-            { id: 32, section: 'ד (Daleth)', hebrew: 'דֶּרֶךְ מִצְוֹתֶיךָ אָרוּץ כִּי תַרְחִיב לִבִּי', pronunciation: "Derekh mitzvoteykha arutz ki tarhiv libbi", korean: '주께서 내 마음을 넓히시면 내가 주의 계명의 길로 달려가리이다', words: "**רוּץ (Rutz):** 달려가다. **רָחַב (Rahav):** 넓히다. **לֵב (Lev):** 마음." },
-
-            // He Section (ה) - 33-40
-            { id: 33, section: 'ה (He)', hebrew: 'הוֹרֵנִי יְהוָה דֶּרֶךְ חֻקֶּיךָ וְאֶצְּרֶנָּה עֵקֶב', pronunciation: "Horeni Adonai derekh huqqeykha ve'etzrennah 'eqev", korean: '여호와여 주의 율례들의 도를 내게 가르치소서 내가 끝까지 지키리이다', words: "**יָרָה (Yarah):** 가르치다. **דֶּרֶךְ (Derekh):** 길. **נָצַר (Natzar):** 지키다." },
-            { id: 34, section: 'ה (He)', hebrew: 'הֲבִינֵנִי וְאֶצְּרָה תוֹרָתֶךָ וְאֶשְׁמְרֶנָּה בְכָל־לֵב', pronunciation: "Havinenni ve'etzrah toratekha ve'eshm'rennah vekol-lev", korean: '나에게 깨달음을 주소서 내가 주의 율법을 준행하며 전심으로 지키리이다', words: "**בִּין (Bin):** 깨닫게 하다. **תּוֹרָה (Torah):** 율법. **שָׁמַר (Shamar):** 지키다." },
-            { id: 35, section: 'ה (He)', hebrew: 'הַדְרִיכֵנִי בִּנְתִיב מִצְוֹתֶיךָ כִּי־בָהּ חָפָצְתִּי', pronunciation: "Hadrikheni vintiv mitzvoteykha ki-vah hafatzti", korean: '나로 주의 계명들의 길로 행하게 하소서 내가 이를 즐거워함이니이다', words: "**דָּרַךְ (Darakh):** 인도하다. **נְתִיבָה (Netivah):** 길. **חָפֵץ (Hafetz):** 즐거워하다." },
-            { id: 36, section: 'ה (He)', hebrew: 'הַט־לִבִּי אֶל־עֵדְוֹתֶיךָ וְאַל אֶל־בָּצַע', pronunciation: "Hat-libbi el-'edoteykha ve'al el-batz'a", korean: '내 마음을 주의 증거들에게 향하게 하시고 탐욕으로 향하지 말게 하소서', words: "**נָטָה (Natah):** 향하게 하다. **עֵדוּת (Edut):** 증거. **בֶּצַע (Betz'a):** 탐욕, 부당한 이익." },
-            { id: 37, section: 'ה (He)', hebrew: 'הַעֲבֵר עֵינַי מֵרְאוֹת שָׁוְא בִּדְרָכְךָ חַיֵּנִי', pronunciation: "Ha'aver 'einay mere'ot shav bidrakhkha hayyeni", korean: '내 눈을 돌이켜 허탄한 것을 보지 말게 하시고 주의 길에서 나를 살아나게 하소서', words: "**עָבַר ('Avar):** 돌이키다. **שָׁוְא (Shav):** 헛된 것. **חָיָה (Hayah):** 살게 하다." },
-            { id: 38, section: 'ה (He)', hebrew: 'הָקֵם לְעַבְדְּךָ אִמְרָתֶךָ אֲשֶׁר לְיִרְאָתֶךָ', pronunciation: "Haqem le'avdekha imratekha 'asher leyir'ateka", korean: '주를 경외하게 할 주의 말씀을 주의 종에게 이루게 하소서', words: "**קוּם (Qum):** 이루게 하다. **אִמְרָה (Imrah):** 말씀. **יִרְאָה (Yir'ah):** 경외심." },
-            { id: 39, section: 'ה (He)', hebrew: 'הַעֲבֵר חֶרְפָּתִי אֲשֶׁר יָגֹרְתִּי כִּי מִשְׁפָּטֶיךָ טוֹבִים', pronunciation: "Ha'aver herpati 'asher yagorti ki mishpateykha tovim", korean: '내가 두려워하는 비방을 내게서 떠나게 하소서 주의 규례들은 선함이니이다', words: "**חֶרְפָּה (Herpah):** 비방, 수치. **יָגֹר (Yagor):** 두려워하다. **מִשְׁפָּט (Mishpat):** 규례." },
-            { id: 40, section: 'ה (He)', hebrew: 'הִנֵּה תָּאַבְתִּי לְפִקֻּדֶיךָ בְּצִדְקָתְךָ חַיֵּנִי', pronunciation: "Hinne ta'avti lefiqudekha betzidqateka hayyeni", korean: '내가 주의 법도들을 사모하였사오니 주의 공의로 나를 살게 하소서', words: "**תָּאַב (Ta'av):** 사모하다. **פִּקּוּד (Piqqud):** 법도. **צִדְקָה (Tzidqah):** 공의, 의로움." },
-            
-            // Vav Section (ו) - 41-48
-            { id: 41, section: 'ו (Vav)', hebrew: 'וִיבֹאֻנִי חַסְדְּךָ יְהוָה תְּשׁוּעָתְךָ כְּאִמְרָתֶךָ', pronunciation: "Vi'vonuni hasdekha Adonai teshu'atkha ke'imratekha", korean: '여호와여 주의 인자하심과 주의 구원을 주의 말씀대로 내게 임하게 하소서', words: "**חֶסֶד (Hesed):** 인자. **תְּשׁוּעָה (Teshu'ah):** 구원. **אִמְרָה (Imrah):** 말씀." },
-            { id: 42, section: 'ו (Vav)', hebrew: 'וְאֶעֱנֶה חֹרְפִי דָבָר כִּי בָטַחְתִּי בִּדְבָרֶךָ', pronunciation: "Ve'e'eneh horefi davar ki vatahti vidvarekha", korean: '그리하면 내가 나를 비방하는 자에게 대답할 말이 있사오니 내가 주의 말씀을 의지함이니이다', words: "**עָנָה ('Anah):** 대답하다. **חָרַף (Haraf):** 비방하다. **בָּטַח (Batah):** 의지하다." },
-            { id: 43, section: 'ו (Vav)', hebrew: 'וְאַל־תַּצֵּל מִפִּי דְבַר־אֱמֶת עַד־מְאֹד כִּי לְמִשְׁפָּטֶךָ יִחָלְתִּי', pronunciation: "Ve'al-tatzel mippi devar-'emet 'ad-me'od ki lemishpateykha yihalti", korean: '주의 진리의 말씀이 내 입에서 떠나지 말게 하소서 내가 주의 규례를 바랐음이니이다', words: "**נָצַל (Natzal):** 떠나게 하다. **אֱמֶת (Emet):** 진리. **מִשְׁפָּט (Mishpat):** 규례. **יָחַל (Yahal):** 바라다." },
-            { id: 44, section: 'ו (Vav)', hebrew: 'וְאֶשְׁמְרָה תוֹרָתְךָ תָמִיד לְעוֹלָם וָעֶד', pronunciation: "Ve'eshm'rah toratkha tamid le'olam va'ed", korean: '내가 주의 율법을 영원히 지키리이다', words: "**שָׁמַר (Shamar):** 지키다. **תּוֹרָה (Torah):** 율법. **עוֹלָם (Olam):** 영원히." },
-            { id: 45, section: 'ו (Vav)', hebrew: 'וְאֶתְהַלְּכָה בָרְחָבָה כִּי פִקּוּדֶיךָ דָרָשְׁתִּי', pronunciation: "Ve'ethallekhah varhavah ki piqqudekha darashti", korean: '내가 주의 법도들을 구하였사오니 자유롭게 걸어 다닐 것이오며', words: "**הָלַךְ (Halakh):** 걷다. **רְחָבָה (Rehavah):** 넓은 곳, 자유롭게. **דָּרַשׁ (Darash):** 구하다." },
-            { id: 46, section: 'ו (Vav)', hebrew: 'וַאֲדַבְּרָה בְעֵדֹתֶיךָ נֶגֶד מְלָכִים וְלֹא אֵבוֹשׁ', pronunciation: "Va'adabberah ve'edoteykha neged melakhim velo evosh", korean: '또 왕들 앞에서 주의 증거를 말할 때에 부끄러워하지 아니하겠사오니', words: "**דָּבַר (Davar):** 말하다. **עֵדוּת (Edut):** 증거. **מֶלֶךְ (Melekh):** 왕. **בּוֹשׁ (Bosh):** 부끄러워하다." },
-            { id: 47, section: 'ו (Vav)', hebrew: 'וְאֶשְׁתַּעֲשַׁע בְּמִצְוֹתֶיךָ אֲשֶׁר אָהָבְתִּי', pronunciation: "Ve'eshta'asha vemitzvoteikha 'asher 'ahavti", korean: '내가 사랑하는 주의 계명들을 스스로 즐거워하며', words: "**שָׁעַע (Sha'a):** 즐거워하다. **מִצְוָה (Mitzvah):** 계명. **אָהֵב (Ahev):** 사랑하다." },
-            { id: 48, section: 'ו (Vav)', hebrew: 'וְאֶשָּׂא כַפַּי אֶל־מִצְוֹתֶיךָ אֲשֶׁר אָהָבְתִּי וְאָשִׂיחָה בְּחֻקֶּיךָ', pronunciation: "Ve'essa khappay el-mitzvoteikha 'asher 'ahavti ve'asicha behuqqeykha", korean: '또 내가 사랑하는 주의 계명들을 향하여 내 손을 들고 주의 율례들을 읊조리리이다', words: "**נָשָׂא (Nasa):** 들다. **כַּף (Kaf):** 손바닥. **חֹק (Hoq):** 율례." },
-
-            // Zayin Section (ז) - 49-56
-            { id: 49, section: 'ז (Zayin)', hebrew: 'זְכֹר דָּבָר לְעַבְדֶּךָ עַל אֲשֶׁר יִחַלְתָּנִי', pronunciation: "Zekhor davar le'avdekha 'al 'asher yihaltani", korean: '주의 종에게 하신 말씀을 기억하소서 주께서 나에게 소망을 주셨나이다', words: "**זָכַר (Zakhar):** 기억하다. **דָּבָר (Davar):** 말씀. **יָחַל (Yahal):** 소망을 주다." },
-            { id: 50, section: 'ז (Zayin)', hebrew: 'זֹאת נֶחָמָתִי בְעָנְיִי כִּי אִמְרָתְךָ חִיָּתְנִי', pronunciation: "Zot nehamati ve'onyi ki imratkha hiyyatni", korean: '이 말씀은 나의 고난 중에 위로라 주의 말씀이 나를 살리셨기 때문이니이다', words: "**נֶחָמָה (Nehamah):** 위로. **עֹנִי ('Oni):** 고난. **חָיָה (Hayah):** 살리다." },
-            { id: 51, section: 'ז (Zayin)', hebrew: 'זֵדִים הֱלִיצֻנִי עַד־מְאֹד מִתּוֹרָתְךָ לֹא נָטִיתִי', pronunciation: "Zedim helitzuni 'ad-me'od mittoratkha lo natiti", korean: '교만한 자들이 나를 심히 조롱하였어도 나는 주의 법을 떠나지 아니하였나이다', words: "**זֵד (Zed):** 교만한 자. **לִיץ (Litz):** 조롱하다. **נָטָה (Natah):** 떠나다." },
-            { id: 52, section: 'ז (Zayin)', hebrew: 'זָכַרְתִּי מִשְׁפָּטֶיךָ מֵעוֹלָם יְהוָה וָאֶתְנֶחָם', pronunciation: "Zakharti mishpateykha me'olam Adonai va'etneham", korean: '여호와여 내가 옛부터 주의 규례들을 기억하고 스스로 위로하였나이다', words: "**זָכַר (Zakhar):** 기억하다. **מִשְׁפָּט (Mishpat):** 규례. **נָחַם (Naham):** 위로하다." },
-            { id: 53, section: 'ז (Zayin)', hebrew: 'זַלְעָפָה אֲחָזַתְנִי מֵרְשָׁעִים עֹזְבֵי תּוֹרָתֶךָ', pronunciation: "Zal'afah ahazatni meresha'im 'ozvei toratekha", korean: '주의 율법을 버린 악인들로 말미암아 내가 맹렬한 분노에 사로잡혔나이다', words: "**זַלְעָפָה (Zal'afah):** 맹렬한 분노. **רָשָׁע (Rasha'):** 악인. **עָזַב ('Azav):** 버리다." },
-            { id: 54, section: 'ז (Zayin)', hebrew: 'זְמִרוֹת הָיוּ־לִי חֻקֶּיךָ בְּבֵית מְגוּרָי', pronunciation: "Zemirot hayu-li huqqeykha beveit megurai", korean: '내가 나그네 된 집에서 주의 율례들이 나의 노래가 되었나이다', words: "**זְמִירָה (Zemirah):** 노래. **חֹק (Hoq):** 율례. **מָגוּר (Magur):** 거처, 나그네." },
-            { id: 55, section: 'ז (Zayin)', hebrew: 'זָכַרְתִּי בַלַּיְלָה שִׁמְךָ יְהוָה וָאֶשְׁמְרָה תּוֹרָתֶךָ', pronunciation: "Zakharti vallaylah shimkha Adonai va'eshm'rah toratekha", korean: '여호와여 내가 밤에 주의 이름을 기억하고 주의 율법을 지켰나이다', words: "**זָכַר (Zakhar):** 기억하다. **שֵׁם (Shem):** 이름. **תּוֹרָה (Torah):** 율법." },
-            { id: 56, section: 'ז (Zayin)', hebrew: 'זֹאת הָיְתָה לִּי כִּי פִקּוּדֶיךָ נָצָרְתִּי', pronunciation: "Zot hayetah li ki piqqudekha natzarti", korean: '이것이 내게는 복이니 곧 내가 주의 법도들을 지킨 것이니이다', words: "**פִּקּוּד (Piqqud):** 법도. **נָצַר (Natzar):** 지키다." },
-
-            // Heth Section (ח) - 57-64
-            { id: 57, section: 'ח (Heth)', hebrew: 'חֶלְקִי יְהוָה אָמַרְתִּי לִשְׁמֹר דְּבָרֶיךָ', pronunciation: "Helqi Adonai 'amarti lishmor devareykha", korean: '여호와는 나의 분깃이시니 나는 주의 말씀을 지키리라 하였나이다', words: "**חֵלֶק (Heleq):** 분깃. **אָמַר (Amar):** 말하다. **דָּבָר (Davar):** 말씀." },
-            { id: 58, section: 'ח (Heth)', hebrew: 'חִלִּיתִי פָנֶיךָ בְכָל־לֵב חָנֵּנִי כְּאִמְרָתֶךָ', pronunciation: "Hilliti faneykha bekol-lev honneni ke'imratekha", korean: '내가 전심으로 주의 은혜를 구하였사오니 주의 말씀대로 나를 긍휼히 여기소서', words: "**חָלָה (Halah):** 은혜를 구하다. **פָּנֶה (Paneh):** 얼굴. **חָנַן (Hanan):** 긍휼히 여기다." },
-            { id: 59, section: 'ח (Heth)', hebrew: 'חִשַּׁבְתִּי דְרָכָי וָאָשִׁיבָה רַגְלַי אֶל־עֵדֹתֶיךָ', pronunciation: "Hishshavti drakhay va'ashivah raglai 'el-'edoteykha", korean: '내가 내 행위를 생각하고 내 발을 주의 증거들에게로 돌이켰사오니', words: "**חָשַׁב (Hashav):** 생각하다. **שׁוּב (Shuv):** 돌이키다. **רֶגֶל (Regel):** 발. **עֵדוּת (Edut):** 증거." },
-            { id: 60, section: 'ח (Heth)', hebrew: 'חַשְׁתִּי וְלֹא הִתְמַהְמָהְתִּי לִשְׁמֹר מִצְוֹתֶיךָ', pronunciation: "Hashti velo hitmahmah'ti lishmor mitzvoteykha", korean: '주의 계명들을 지키기에 지체하지 아니하고 신속히 하였나이다', words: "**חוּשׁ (Hush):** 신속히 하다. **מָהַהּ (Mahah):** 지체하다. **מִצְוָה (Mitzvah):** 계명." },
-            { id: 61, section: 'ח (Heth)', hebrew: 'חַבְלֵי רְשָׁעִים עִוְּדֻנִי תּוֹרָתְךָ לֹא שָׁכָחְתִּי', pronunciation: "Havlei resha'im 'ivveduni toratkha lo shakhakhti", korean: '악인의 줄이 나를 둘러 쌌을지라도 나는 주의 율법을 잊지 아니하였나이다', words: "**חֶבֶל (Hevel):** 줄, 덫. **רָשָׁע (Rasha'):** 악인. **שָׁכַח (Shakhah):** 잊다." },
-            { id: 62, section: 'ח (Heth)', hebrew: 'חֲצוֹת לַיְלָה אָקוּם לְהוֹדוֹת לָךְ עַל מִשְׁפְּטֵי צִדְקֶךָ', pronunciation: "Hatzot laylah 'aqum lehodot lakh 'al mishpetei tzidqekha", korean: '내가 주의 의로운 규례들로 말미암아 한밤중에 일어나 주께 감사하리이다', words: "**חֲצוֹת (Hatzot):** 한밤중. **קוּם (Qum):** 일어나다. **מִשְׁפָּט (Mishpat):** 규례." },
-            { id: 63, section: 'ח (Heth)', hebrew: 'חָבֵר אָנִי לְכָל־אֲשֶׁר יְרֵאוּךָ וּלְשֹׁמְרֵי פִקּוּדֶיךָ', pronunciation: "Haver 'ani lekol-'asher yere'ukha uleshomrei piqqudekha", korean: '나는 주를 경외하는 모든 자들과 주의 법도들을 지키는 자들의 동무라', words: "**חָבֵר (Haver):** 동무. **יָרֵא (Yare):** 경외하다. **פִּקּוּד (Piqqud):** 법도." },
-            { id: 64, section: 'ח (Heth)', hebrew: 'חַסְדְּךָ יְהוָה מָלְאָה הָאָרֶץ חֻקֶּיךָ לַמְּדֵנִי', pronunciation: "Hasdekha Adonai male'ah ha'aretz huqqeykha lammedeni", korean: '여호와여 주의 인자하심이 땅에 가득하였사오니 주의 율례들을 내게 가르치소서', words: "**חֶסֶד (Hesed):** 인자. **מָלֵא (Male):** 가득하다. **אֶרֶץ (Eretz):** 땅." },
-
-            // Teth Section (ט) - 65-72
-            { id: 65, section: 'ט (Teth)', hebrew: 'טוֹב עָשִׂיתָ עִם־עַבְדְּךָ יְהוָה כִּדְבָרֶךָ', pronunciation: "Tov 'asita 'im-'avdekha Adonai kidvarekha", korean: '여호와여 주의 말씀대로 주의 종에게 선을 행하셨나이다', words: "**טוֹב (Tov):** 선한. **עָשָׂה ('Asah):** 행하다. **דָּבָר (Davar):** 말씀." },
-            { id: 66, section: 'ט (Teth)', hebrew: 'טוּב טַעַם וָדַעַת לַמְּדֵנִי כִּי בְמִצְוֹתֶיךָ הֶאֱמָנְתִּי', pronunciation: "Tuv ta'am vada'at lammedeni ki vemitzvoteikha he'emanti", korean: '내가 주의 계명들을 믿었사오니 좋은 명철과 지식을 내게 가르치소서', words: "**טַעַם (Ta'am):** 명철, 맛. **דַּעַת (Da'at):** 지식. **אָמַן (Aman):** 믿다." },
-            { id: 67, section: 'ט (Teth)', hebrew: 'טֶרֶם אֶעֱנֶה אֲנִי שֹׁגֵג וְעַתָּה אִמְרָתְךָ שָׁמָרְתִּי', pronunciation: "Terem 'e'eneh ani shogeg ve'attah imratkha shamarti", korean: '고난 당하기 전에는 내가 그릇 행하였더니 이제는 주의 말씀을 지키나이다', words: "**שָׁגָה (Shagah):** 그릇 행하다. **שָׁמַר (Shamar):** 지키다. **אִמְרָה (Imrah):** 말씀." },
-            { id: 68, section: 'ט (Teth)', hebrew: 'טוֹב אַתָּה וּמֵטִיב לַמְּדֵנִי חֻקֶּיךָ', pronunciation: "Tov attah umetiv lammedeni huqqeykha", korean: '주는 선하사 선을 행하시오니 주의 율례들로 나를 가르치소서', words: "**טוֹב (Tov):** 선한. **יָטַב (Yatav):** 선을 행하다. **חֹק (Hoq):** 율례." },
-            { id: 69, section: 'ט (Teth)', hebrew: 'טָפְלוּ עָלַי שֶׁקֶר זֵדִים אֲנִי בְּכָל־לֵב אֶצֹּר פִּקּוּדֶיךָ', pronunciation: "Tafelu 'alay sheqer zedim 'ani vekol-lev 'etzor piqqudekha", korean: '교만한 자들이 거짓을 지어 나를 쳤사오나 나는 전심으로 주의 법도들을 지키리이다', words: "**טָפַל (Tafal):** 지어내다. **שֶׁקֶר (Sheqer):** 거짓. **זֵד (Zed):** 교만한 자. **נָצַר (Natzar):** 지키다." },
-            { id: 70, section: 'ט (Teth)', hebrew: 'טָפְשָׁה כַשֻּׁמָּן לִבָּם אֲנִי תּוֹרָתְךָ שִׁעֲשָׁעְתִּי', pronunciation: "Tafshah khashumman libbam 'ani toratkha shi'asha'ti", korean: '그들의 마음은 살져서 지방 같으나 나는 주의 율법을 즐거워하나이다', words: "**טָפַשׁ (Tafash):** 살지다, 둔감하다. **שֻׁמָּן (Shumman):** 지방. **תּוֹרָה (Torah):** 율법." },
-            { id: 71, section: 'ט (Teth)', hebrew: 'טוֹב לִי כִי עֻנֵּיתִי לְמַעַן אֶלְמַד חֻקֶּיךָ', pronunciation: "Tov li ki 'unneiti lema'an elmad huqqeykha", korean: '고난 당한 것이 내게 유익이라 이로 말미암아 내가 주의 율례들을 배우게 되었나이다', words: "**עָנָה ('Anah):** 고난 당하다. **לָמַד (Lamad):** 배우다. **חֹק (Hoq):** 율례." },
-            { id: 72, section: 'ט (Teth)', hebrew: 'טוֹב־לִי תוֹרַת פִּיךָ מֵאַלְפֵי זָהָב וָכָסֶף', pronunciation: "Tov-li torat pika me'alfei zahav vakhasef", korean: '주의 입의 법이 내게는 천천 금은보다 좋으니이다', words: "**תּוֹרָה (Torah):** 법. **זָהָב (Zahav):** 금. **כֶּסֶף (Kesef):** 은." },
-            
-            // Yod Section (י) - 73-80
-            { id: 73, section: 'י (Yod)', hebrew: 'יָדֶיךָ עָשׂוּנִי וַיְכוֹנְנוּנִי הֲבִינֵנִי וְאֶלְמַד מִצְוֹתֶיךָ', pronunciation: "Yadeykha 'asuni vaykhon'nuni havinenni ve'elmad mitzvoteykha", korean: '주의 손이 나를 만들고 세우셨사오니 내가 깨달아 주의 계명들을 배우게 하소서', words: "**עָשָׂה ('Asah):** 만들다. **כּוּן (Kun):** 세우다. **בִּין (Bin):** 깨닫게 하다. **מִצְוָה (Mitzvah):** 계명." },
-            { id: 74, section: 'י (Yod)', hebrew: 'יְרֵאֶיךָ יִרְאוּנִי וְיִשְׂמָחוּ כִּי לִדְבָרְךָ יִחָלְתִּי', pronunciation: "Yere'eykha yir'uni veyismahu ki lidvarekha yihalti", korean: '주를 경외하는 자들이 나를 보고 기뻐하는 것은 내가 주의 말씀을 바라는 까닭이니이다', words: "**יָרֵא (Yare):** 경외하는 자. **רָאָה (Ra'ah):** 보다. **יָחַל (Yahal):** 바라다." },
-            { id: 75, section: 'י (Yod)', hebrew: 'יָדַעְתִּי יְהוָה כִּי־צֶדֶק מִשְׁפָּטֶיךָ וֶאֱמוּנָה עִנִּיתָנִי', pronunciation: "Yada'ti Adonai ki-tzedeq mishpateykha ve'emunah 'innitani", korean: '여호와여 내가 알거니와 주의 심판은 의로우시고 주께서 나를 괴롭게 하심은 성실하심 때문이니이다', words: "**יָדַע (Yada'):** 알다. **צֶדֶק (Tzedeq):** 의로움. **אֱמוּנָה (Emunah):** 성실. **עָנָה ('Anah):** 괴롭게 하다." },
-            { id: 76, section: 'י (Yod)', hebrew: 'יְהִי־נָא חַסְדְּךָ לְנַחֲמֵנִי כְּאִמְרָתְךָ לְעַבְדֶּךָ', pronunciation: "Yehi-na hasdekha lenahameni ke'imratkha le'avdekha", korean: '구하오니 주의 종에게 하신 말씀대로 주의 인자하심이 나의 위로가 되게 하소서', words: "**חֶסֶד (Hesed):** 인자. **נָחַם (Naham):** 위로하다. **אִמְרָה (Imrah):** 말씀." },
-            { id: 77, section: 'י (Yod)', hebrew: 'יְבֹאוּנִי רַחֲמֶיךָ וְאֶחְיֶה כִּי תוֹרָתְךָ שַׁעֲשֻׁעָי', pronunciation: "Yevonuni rahamykha ve'ehyeh ki toratkha sha'ashu'ay", korean: '주의 긍휼히 여기심이 내게 임하사 내가 살게 하소서 주의 율법은 나의 즐거움이니이다', words: "**רַחֲמִים (Rahamim):** 긍휼. **חָיָה (Hayah):** 살다. **תּוֹרָה (Torah):** 율법." },
-            { id: 78, section: 'י (Yod)', hebrew: 'יֵבֹשׁוּ זֵדִים כִּי־שֶׁקֶר עִוְּתוּנִי אֲנִי אָשִׂיחַ בְּפִקּוּדֶיךָ', pronunciation: "Yevoshu zedim ki-sheqer 'ivvetuni 'ani 'asiah vepiqqudekha", korean: '교만한 자들이 거짓으로 나를 엎드러뜨렸으니 그들이 수치를 당하게 하소서 나는 주의 법도들을 묵상하리이다', words: "**בּוֹשׁ (Bosh):** 수치를 당하다. **עָוַת ('Avat):** 엎드러뜨리다. **פִּקּוּד (Piqqud):** 법도." },
-            { id: 79, section: 'י (Yod)', hebrew: 'יָשׁוּבוּ לִי יְרֵאֶיךָ וְיֹדְעֵי עֵדֹתֶיךָ', pronunciation: "Yashuvu li yere'eykha veyod'ei 'edoteykha", korean: '주를 경외하는 자들이 내게로 돌아오게 하소서 주의 증거들을 아는 자들입니다', words: "**שׁוּב (Shuv):** 돌아오다. **יָרֵא (Yare):** 경외하는 자. **עֵדוּת (Edut):** 증거." },
-            { id: 80, section: 'י (Yod)', hebrew: 'יְהִי־לִבִּי תָמִים בְּחֻקֶּיךָ לְמַעַן לֹא אֵבוֹשׁ', pronunciation: "Yehi-libbi tamim behuqqeykha lema'an lo evosh", korean: '내 마음이 주의 율례들에게 온전하게 하사 내가 수치를 당하지 아니하게 하소서', words: "**לֵב (Lev):** 마음. **תָּמִים (Tamim):** 온전한. **בּוֹשׁ (Bosh):** 수치를 당하다." },
-            
-            // Kaph Section (כ) - 81-88 (기존 데이터 확장)
-            { id: 81, section: 'כ (Kaph)', hebrew: 'כָּלְתָה לִתְשׁוּעָתְךָ נַפְשִׁי לְדְבָרְךָ יִחָלְתִּי', pronunciation: "Kaltah lishu'ateka nafshi lidevarekha yihalti", korean: '나의 영혼이 주의 구원을 사모하기에 피곤하오나 나는 주의 말씀을 바라나이다', words: "**נֶפֶשׁ (Nefesh):** 영혼, 목숨. **יָחַל (Yahal):** 바라다, 기대하다." },
-            { id: 82, section: 'כ (Kaph)', hebrew: 'כָּלוּ עֵינַי לְאִמְרָתֶךָ לֵאמֹר מָתַי תְּנַחֲמֵנִי', pronunciation: "Kalu einay le'imratekha lemor matai tenahameni", korean: '나의 눈이 주의 말씀을 바라기에 피곤하여 이르기를 주께서 언제나 나를 위로하실까 하나이다', words: "**עַיִן (Ayin):** 눈. **אִמְרָה (Imrah):** 말씀, 약속. **נָחַם (Naham):** 위로하다, 긍휼히 여기다." },
-            { id: 83, section: 'כ (Kaph)', hebrew: 'כִּי־הָיִיתִי כְּנֹאד בְּקִיטוֹר אִמְרֹתֶיךָ לֹא שָׁכָחְתִּי', pronunciation: "Ki-hayiti chenod beqitor imrotekha lo shakhakhti", korean: '내가 연기 속의 가죽 부대 같이 되었으나 주의 율례들을 잊지 아니하나이다', words: "**נֹאד (Nod):** 가죽 부대. **קִיטוֹר (Qitor):** 연기. **שָׁכַח (Shakhah):** 잊다." },
-            { id: 84, section: 'כ (Kaph)', hebrew: 'כַּמָּה יְמֵי עַבְדֶּךָ מָתַי תַּעֲשֶׂה בְרוֹדְפַי מִשְׁפָּט', pronunciation: "Kammah yemei avdekha matai ta'aseh verodfay mishpat", korean: '주의 종의 날이 얼마나 남았나이까 나를 박해하는 자들을 주께서 언제나 심판하시리이까', words: "**עֶבֶד (Eved):** 종. **מִשְׁפָּט (Mishpat):** 심판, 정의, 규례." },
-            { id: 85, section: 'כ (Kaph)', hebrew: 'כָּרוּ לִי זֵדִים שִׁיחוֹת אֲשֶׁר לֹא כְתוֹרָתֶךָ', pronunciation: "Karu li zedim shihot asher lo chetorateka", korean: '주의 율법을 따르지 아니하는 교만한 자들이 나를 해하려고 구덩이를 팠나이다', words: "**זֵד (Zed):** 교만한 자. **שׁוּחָה (Shuhah):** 구덩이, 함정. **תּוֹרָה (Torah):** 율법, 가르침." },
-            { id: 86, section: 'כ (Kaph)', hebrew: 'כָּל־מִצְוֹתֶיךָ אֱמוּנָה שֶׁקֶר רְדָפוּנִי עָזְרֵנִי', pronunciation: "Kol-mitzvoteikha emunah sheqer radafuni ozreni", korean: '주의 모든 계명은 진실하니이다 그들이 거짓으로 나를 박해하오니 나를 도우소서', words: "**מִצְוָה (Mitzvah):** 계명, 명령. **אֱמוּנָה (Emunah):** 신실함, 믿음. **שֶׁקֶר (Sheqer):** 거짓, 허위." },
-            { id: 87, section: 'כ (Kaph)', hebrew: 'כִּמְעַט כִּלּוּנִי בָאָרֶץ וַאֲנִי לֹא־עָזַבְתִּי פִקּוּדֶיךָ', pronunciation: "Kim'at kiluni va'aretz va'ani lo-'azavti piqqudekha", korean: '그들이 나를 세상에서 거의 멸망시켰으나 나는 주의 법도들을 버리지 아니하였사오니', words: "**כָּלָה (Kalah):** 끝내다, 멸망시키다. **פִּקּוּד (Piqqud):** 법도, 교훈." },
-            { id: 88, section: 'כ (Kaph)', hebrew: 'כְּחַסְדְּךָ חַיֵּנִי וְאֶשְׁמְרָה עֵדוּת פִּיךָ', pronunciation: "Kehasdekha hayyeni ve'eshemerah edut pikha", korean: '주의 인자하심을 따라 나를 살리소서 그리하시면 주의 입의 증거들을 지키리이다', words: "**חֶסֶד (Hesed):** 인자, 사랑, 자비. **חָיָה (Hayah):** 살게 하다. **עֵדוּת (Edut):** 증거, 규례." },
-
-            // Lamed Section (ל) - 89-96 (기존 데이터 확장)
-            { id: 89, section: 'ל (Lamed)', hebrew: 'לְעוֹלָם יְהוָה דְּבָרְךָ נִצָּב בַּשָּׁמָיִם', pronunciation: "Le'olam Adonai devar'kha nitzav bashamayim", korean: '여호와여 주의 말씀은 영원히 하늘에 굳게 섰사오며', words: "**עוֹלָם (Olam):** 영원. **דָּבָר (Davar):** 말씀, 일. **נָצַב (Natzav):** 서다, 확고하다." },
-            { id: 90, section: 'ל (Lamed)', hebrew: 'לְדֹר וָדֹר אֱמוּנָתֶךָ כּוֹנַנְתָּ אֶרֶץ וַתַּעֲמֹד', pronunciation: "Ledor vador emunatekha konanta eretz vata'amod", korean: '주의 성실하심은 대대에 이르나이다 주께서 땅을 세우셨으므로 땅이 항상 있나이다', words: "**אֱמוּנָה (Emunah):** 성실, 신실함. **כּוּן (Kun):** 세우다, 확립하다. **אֶרֶץ (Eretz):** 땅." },
-            { id: 91, section: 'ל (Lamed)', hebrew: 'לְמִשְׁפָּטֶיךָ עָמְדוּ הַיּוֹם כִּי הַכֹּל עֲבָדֶיךָ', pronunciation: "Ledishpateykha 'amdu hayyom ki hakol 'avadeykha", korean: '천지가 주의 규례들대로 오늘까지 있음은 만물이 주의 종이 됨이니이다', words: "**מִשְׁפָּט (Mishpat):** 규례, 심판. **עָמַד (Amad):** 서 있다. **עֶבֶד (Eved):** 종." },
-            { id: 92, section: 'ל (Lamed)', hebrew: 'לוּלֵי תוֹרָתְךָ שַׁעֲשֻׁעָי אָז אָבַדְתִּי בְעָנְיִי', pronunciation: "Lulei toratekha sha'ashu'ay az 'avadti ve'onyi", korean: '주의 율법이 나의 즐거움이 되지 아니하였더면 내가 내 고난 중에서 멸망하였으리이다', words: "**תּוֹרָה (Torah):** 율법. **שַׁעֲשֻׁעִים (Sha'ashu'im):** 즐거움, 기쁨. **עֹנִי ('Oni):** 고난, 비참." },
-            { id: 93, section: 'ל (Lamed)', hebrew: 'לְעוֹלָם לֹא אֶשְׁכַּח פִּקּוּדֶיךָ כִּי בָם חִיִּיתָנִי', pronunciation: "Le'olam lo eshkakh piqudeykha ki vam hiyitani", korean: '내가 주의 법도들을 영원히 잊지 아니함은 주께서 이것들 때문에 나를 살게 하셨음이니이다', words: "**פִּקּוּד (Piqqud):** 법도. **חָיָה (Hayah):** 살게 하다." },
-            { id: 94, section: 'ל (Lamed)', hebrew: 'לְךָ אֲנִי הוֹשִׁיעֵנִי כִּי פִקּוּדֶיךָ דָרָשְׁתִּי', pronunciation: "Lekha 'ani hoshi'eni ki piqudeykha darashti", korean: '나는 주의 것이오니 나를 구원하소서 내가 주의 법도들만을 찾았나이다', words: "**יָשַׁע (Yasha'):** 구원하다. **דָּרַשׁ (Darash):** 찾다, 구하다." },
-            { id: 95, section: 'ל (Lamed)', hebrew: 'לִי קִוּוּ רְשָׁעִים לְאַבְּדֵנִי עֵדֹתֶיךָ אֶתְבּוֹנָן', pronunciation: "Li qivvu resha'im le'abbedeni 'edoteykha 'etbonan", korean: '악인들이 나를 멸하려고 엿보오나 나는 주의 증거의 말씀을 생각하나이다', words: "**רָשָׁע (Rasha'):** 악인. **עֵדוּת (Edut):** 증거, 규례. **בִּין (Bin):** 깨닫다, 이해하다." },
-            { id: 96, section: 'ל (Lamed)', hebrew: 'לְכָל־תִּכְלָה רָאִיתִי קֵץ רְחָבָה מִצְוָתְךָ מְאֹד', pronunciation: "Lekhol-tikhlah ra'iti qetz rehavah mitzvatkha me'od", korean: '내가 보니 모든 완전한 것이 끝이 있어도 주의 계명은 심히 넓으니이다', words: "**כָּלָה (Kalah):** 완전한 것(의 끝). **מִצְוָה (Mitzvah):** 계명. **רָחַב (Rahav):** 넓다." },
-
-            // Mem Section (מ) - 97-104 (기존 데이터 확장)
-            { id: 97, section: 'מ (Mem)', hebrew: 'מָה אָהַבְתִּי תוֹרָתֶךָ כָּל־הַיּוֹם הִיא שִׂיחָתִי', pronunciation: "Mah 'ahavti toratekha kol-hayyom hi sihati", korean: '내가 주의 법을 어찌 그리 사랑하는지여 내가 그것을 종일 작은 소리로 읊조리나이다', words: "**אָהֵב (Ahev):** 사랑하다. **שִׂיחָה (Sihah):** 묵상, 읊조림." },
-            { id: 98, section: 'מ (Mem)', hebrew: 'מֵאֹיְבַי תְּחַכְּמֵנִי מִצְוֹתֶךָ כִּי לְעוֹלָם הִיא לִי', pronunciation: "Me'oyevay tehakkemeni mitzvotekha ki le'olam hi li", korean: '주의 계명이 항상 나와 함께 하므로 나의 원수보다 나를 지혜롭게 하나이다', words: "**חָכַם (Hakam):** 지혜롭게 하다. **מִצְוָה (Mitzvah):** 계명." },
-            { id: 99, section: 'מ (Mem)', hebrew: 'מִכָּל־מְלַמְּדַי הִשְׂכַּלְתִּי כִּי עֵדְוֹתֶיךָ שִׂיחָה לִּי', pronunciation: "Mikkol-melammday hiskalti ki 'edvoteykha sihah li", korean: '내가 주의 증거들을 늘 생각하므로 나의 모든 스승보다 지혜로우며', words: "**שָׂכַל (Sakhal):** 이해하다, 통찰력을 얻다. **עֵדוּת (Edut):** 증거." },
-            { id: 100, section: 'מ (Mem)', hebrew: 'מִזְּקֵנִים אֶתְבּוֹנָן כִּי פִקּוּדֶיךָ נָצָרְתִּי', pronunciation: "Mizzeqenim 'etbonan ki piqqudekha natzarti", korean: '주의 법도들을 지키므로 노인보다 깨닫나이다', words: "**זָקֵן (Zaqen):** 노인. **נָצַר (Natzar):** 지키다, 보존하다." },
-            { id: 101, section: 'מ (Mem)', hebrew: 'מִכָּל־אֹרַח רָע כָּלִאתִי רַגְלָי לְמַעַן אֶשְׁמֹר דְּבָרֶךָ', pronunciation: "Mikkol-'orah ra khali'ti raglay lema'an 'eshmor devarekha", korean: '내가 주의 말씀을 지키려고 악한 모든 길을 금하여 내 발을 제어하였사오며', words: "**כָּלָא (Kala'):** 금하다, 억제하다. **דָּבָר (Davar):** 말씀." },
-            { id: 102, section: 'מ (Mem)', hebrew: 'מִמִּשְׁפָּטֶיךָ לֹא נָטִיתִי כִּי אַתָּה הוֹרֵתָנִי', pronunciation: "Mimmishpateykha lo natiti ki 'attah horetani", korean: '주께서 나를 가르치셨으므로 내가 주의 규례들에서 떠나지 아니하였나이다', words: "**נָטָה (Natah):** 기울다, 떠나다. **יָרָה (Yarah):** 가르치다." },
-            { id: 103, section: 'מ (Mem)', hebrew: 'מַה־נִּמְלְצוּ לְחִכִּי אִמְרָתֶךָ מִדְּבַשׁ לְפִי', pronunciation: "Mah-nimletzu lehikki 'imratekha middevash lefi", korean: '주의 말씀의 맛이 내게 어찌 그리 단지여 내 입에 꿀보다 더 다니이다', words: "**מָלַץ (Malatz):** 달다, 즐겁다. **חֵךְ (Hekh):** 입천장. **דְּבַשׁ (Devash):** 꿀." },
-            { id: 104, section: 'מ (Mem)', hebrew: 'מִפִּקּוּדֶיךָ אֶתְבּוֹנָן עַל־כֵּן שָׂנֵאתִי כָּל־אֹרַח שֶׁקֶר', pronunciation: "Mippiqudeykha 'etbonan 'al-ken sane'ti kol-'orah sheqer", korean: '주의 법도들로 말미암아 내가 명철하게 되었으므로 모든 거짓 행위를 미워하나이다', words: "**בִּין (Bin):** 깨닫다, 이해하다. **שָׂנֵא (Sane'):** 미워하다. **שֶׁקֶר (Sheqer):** 거짓." },
-
-            // Nun Section (נ) - 105-112
-            { id: 105, section: 'נ (Nun)', hebrew: 'נֵר־לְרַגְלִי דְבָרֶךָ וְאוֹר לִנְתִיבָתִי', pronunciation: "Ner-leragli devarekha ve'or lintivati", korean: '주의 말씀은 내 발에 등이요 내 길에 빛이니이다', words: "**נֵר (Ner):** 등불. **רֶגֶל (Regel):** 발. **אוֹר (Or):** 빛. **נְתִיבָה (Netivah):** 길." },
-            { id: 106, section: 'נ (Nun)', hebrew: 'נִשְׁבַּעְתִּי וָאֲקַיֵּמָה לִשְׁמֹר מִשְׁפְּטֵי צִדְקֶךָ', pronunciation: "Nishba'ti va'aqayyemah lishmor mishpetei tzidqekha", korean: '주의 의로운 규례들을 지키기로 맹세하고 굳게 정하였나이다', words: "**שָׁבַע (Shava'):** 맹세하다. **קוּם (Qum):** 굳게 정하다. **צֶדֶק (Tzedeq):** 의로움." },
-            { id: 107, section: 'נ (Nun)', hebrew: 'נַעֲנֵיתִי עַד־מְאֹד יְהוָה חַיֵּנִי כִדְבָרֶךָ', pronunciation: "Na'aneiti 'ad-me'od Adonai hayyeni khidvarekha", korean: '나의 고난이 매우 심하오니 여호와여 주의 말씀대로 나를 소성하게 하소서', words: "**עָנָה ('Anah):** 고난당하다. **חָיָה (Hayah):** 소성하게 하다. **דָּבָר (Davar):** 말씀." },
-            { id: 108, section: 'נ (Nun)', hebrew: 'נִדְבוֹת פִּי רְצֵה־נָא יְהוָה וּמִשְׁפָּטֶיךָ לַמְּדֵנִי', pronunciation: "Nidvot pi retzeh-na Adonai umishpateykha lammedeni", korean: '여호와여 구하오니 내 입이 드리는 자원 제물을 받으시고 주의 규례들을 내게 가르치소서', words: "**נְדָבָה (Nedavah):** 자원 제물. **רָצָה (Ratzah):** 받으시다. **מִשְׁפָּט (Mishpat):** 규례." },
-            { id: 109, section: 'נ (Nun)', hebrew: 'נַפְשִׁי בְכַפִּי תָמִיד וְתוֹרָתְךָ לֹא שָׁכָחְתִּי', pronunciation: "Nafshi vekhappi tamid vetoratkha lo shakhakhti", korean: '나의 생명이 항상 위험에 있사오나 나는 주의 율법을 잊지 아니하나이다', words: "**נֶפֶשׁ (Nefesh):** 생명. **כַּף (Kaf):** 손바닥. **שָׁכַח (Shakhah):** 잊다." },
-            { id: 110, section: 'נ (Nun)', hebrew: 'נָתְנוּ רְשָׁעִים פַּח לִי וּמִפִּקּוּדֶיךָ לֹא תָעִיתִי', pronunciation: "Natenu resha'im pah li umippiqudekha lo ta'iti", korean: '악인들이 나를 해하려고 올무를 놓았사오나 나는 주의 법도들에서 떠나지 아니하였나이다', words: "**רָשָׁע (Rasha'):** 악인. **פַּח (Pah):** 올무. **תָּעָה (Ta'ah):** 떠나다." },
-            { id: 111, section: 'נ (Nun)', hebrew: 'נָחַלְתִּי עֵדְוֹתֶיךָ לְעוֹלָם כִּי שְׂשׂוֹן לִבִּי הֵמָּה', pronunciation: "Nahalti 'edoteykha le'olam ki seson libbi hemmah", korean: '주의 증거들은 나의 영원한 기업이오니 이는 내 마음의 즐거움이 됨이니이다', words: "**נָחַל (Nahal):** 기업으로 삼다. **עֵדוּת (Edut):** 증거. **שָׂשׂוֹן (Sason):** 즐거움." },
-            { id: 112, section: 'נ (Nun)', hebrew: 'נָטִיתִי לִבִּי לַעֲשׂוֹת חֻקֶּיךָ לְעוֹלָם עֵקֶב', pronunciation: "Natiti libbi la'asot huqqeykha le'olam 'eqev", korean: '내가 주의 율례들을 영원히 끝까지 행하려고 내 마음을 기울였나이다', words: "**נָטָה (Natah):** 기울이다. **חֹק (Hoq):** 율례. **עֵקֶב ('Eqev):** 끝까지." },
-
-            // Samekh Section (ס) - 113-120
-            { id: 113, section: 'ס (Samekh)', hebrew: 'סֵעֲפִים שָׂנֵאתִי וְתוֹרָתְךָ אָהָבְתִּי', pronunciation: "Se'afim sane'ti vetoratkha 'ahavti", korean: '내가 두 마음 품는 자를 미워하고 주의 율법을 사랑하나이다', words: "**סֵעֵף (Se'ef):** 두 마음, 흔들림. **שָׂנֵא (Sane'):** 미워하다. **אָהֵב (Ahev):** 사랑하다." },
-            { id: 114, section: 'ס (Samekh)', hebrew: 'סִתְרִי וּמָגִנִּי אָתָּה לִדְבָרְךָ יִחָלְתִּי', pronunciation: "Sitri umaginni attah lidvarekha yihalti", korean: '주는 나의 은신처요 방패이시니 내가 주의 말씀을 바라나이다', words: "**סֵתֶר (Seter):** 은신처. **מָגֵן (Magen):** 방패. **יָחַל (Yahal):** 바라다." },
-            { id: 115, section: 'ס (Samekh)', hebrew: 'סוּרוּ מִמֶּנִּי מְרֵעִים וְאֶשְׁמְרָה מִצְוֹת אֱלֹהָי', pronunciation: "Suru mimmenni mere'im ve'eshm'rah mitzvot 'Elohay", korean: '너희 악행하는 자들아 나를 떠나라 나는 내 하나님의 계명들을 지키리로다', words: "**סוּר (Sur):** 떠나다. **מֵרֵעַ (Mere'a'):** 악행하는 자. **מִצְוָה (Mitzvah):** 계명." },
-            { id: 116, section: 'ס (Samekh)', hebrew: 'סָמְכֵנִי כְאִמְרָתְךָ וְאֶחְיֶה וְאַל־תְּבִישֵׁנִי מִשִּׂבְרִי', pronunciation: "Somkheni khe'imratkha ve'ehyeh ve'al-tevisheni missivri", korean: '주의 말씀대로 나를 붙들어 살게 하시고 내 소망이 부끄럽지 않게 하소서', words: "**סָמַךְ (Samakh):** 붙들다. **חָיָה (Hayah):** 살다. **בּוֹשׁ (Bosh):** 부끄러워하다. **שִׂבְר (Sivr):** 소망." },
-            { id: 117, section: 'ס (Samekh)', hebrew: 'סְעָדֵנִי וְאִוָּשֵׁעָה וְאֶשְׁעָה בְחֻקֶּיךָ תָמִיד', pronunciation: "Se'adeni ve'ivvashea'ah ve'esh'ah vehuqqeykha tamid", korean: '나를 붙들어 주소서 그리하시면 내가 구원을 얻고 주의 율례들에게 항상 주의하리이다', words: "**סָעַד (Sa'ad):** 붙들다, 지지하다. **יָשַׁע (Yasha'):** 구원하다. **חֹק (Hoq):** 율례." },
-            { id: 118, section: 'ס (Samekh)', hebrew: 'סָלִיתָ כָּל־שֹׁגִים מֵחֻקֶּיךָ כִּי שֶׁקֶר תַּרְמִיתָם', pronunciation: "Salita kol-shogim mehukeykha ki sheqer tarmitam", korean: '주의 율례들에서 떠나는 자들을 주께서 다 멸시하셨으니 그들의 속임수는 거짓임이니이다', words: "**סָלָה (Salah):** 멸시하다. **שָׁגָה (Shagah):** 떠나다. **תַּרְמִית (Tarmit):** 속임수." },
-            { id: 119, section: 'ס (Samekh)', hebrew: 'סִגִים הִשְׁבַּתָּ כָל־רִשְׁעֵי אָרֶץ לָכֵן אָהַבְתִּי עֵדֹתֶיךָ', pronunciation: "Sigim hishbatta khol-rish'ei 'aretz lakhen 'ahavti 'edoteykha", korean: '주께서 세상의 모든 악인들을 찌꺼기 같이 버리시므로 내가 주의 증거들을 사랑하나이다', words: "**סִגִים (Sigim):** 찌꺼기. **שָׁבַת (Shavat):** 제거하다. **אָהֵב (Ahev):** 사랑하다." },
-            { id: 120, section: 'ס (Samekh)', hebrew: 'סָמַר מִפַּחְדְּךָ בְשָׂרִי וּמִמִּשְׁפָּטֶיךָ יָרֵאתִי', pronunciation: "Samar mippahdekha vesari umimmishpateykha yare'ti", korean: '주를 두려워하므로 내 육체가 떨리오며 내가 주의 심판을 무서워하나이다', words: "**סָמַר (Samar):** 떨다. **פַּחַד (Pahad):** 두려움. **יָרֵא (Yare):** 무서워하다." },
-
-            // Ayin Section (ע) - 121-128
-            { id: 121, section: 'ע (Ayin)', hebrew: 'עָשִׂיתִי מִשְׁפָּט וָצֶדֶק בַּל־תַּנִּיחֵנִי לְעֹשְׁקָי', pronunciation: "'Asiti mishpat vatzedeq bal-tanniheni le'oshqay", korean: '내가 정의와 공의를 행하였사오니 나를 억압하는 자들에게 내버려 두지 마소서', words: "**מִשְׁפָּט (Mishpat):** 정의. **צֶדֶק (Tzedeq):** 공의. **עָשַׁק ('Ashaq):** 억압하다." },
-            { id: 122, section: 'ע (Ayin)', hebrew: 'עֲרֹב עַבְדְּךָ לְטוֹבָה לֹא יַעַשְׁקֻנִי זֵדִים', pronunciation: "'Arov 'avdekha letovah lo ya'ashquni zedim", korean: '주의 종이 형통함을 얻도록 보증하소서 교만한 자들이 나를 억압하지 못하게 하소서', words: "**עָרַב ('Arav):** 보증하다. **טוֹבָה (Tovah):** 형통. **זֵד (Zed):** 교만한 자." },
-            { id: 123, section: 'ע (Ayin)', hebrew: 'עֵינַי כָּלוּ לִישׁוּעָתֶךָ וּלְאִמְרַת צִדְקֶךָ', pronunciation: "'Einay kalu lishu'ateka ule'imrat tzidqekha", korean: '내 눈이 주의 구원과 주의 의로운 말씀을 사모하기에 피곤하니이다', words: "**עַיִן (Ayin):** 눈. **כָּלָה (Kalah):** 피곤하다. **צֶדֶק (Tzedeq):** 의로움." },
-            { id: 124, section: 'ע (Ayin)', hebrew: 'עֲשֵׂה עִם־עַבְדְּךָ כְחַסְדֶּךָ וְחֻקֶּיךָ לַמְּדֵנִי', pronunciation: "'Aseh 'im-'avdekha khehasdekha vehuqqeykha lammedeni", korean: '주의 인자하심을 따라 주의 종에게 행하시고 주의 율례들로 나를 가르치소서', words: "**חֶסֶד (Hesed):** 인자. **חֹק (Hoq):** 율례. **לָמַד (Lamad):** 가르치다." },
-            { id: 125, section: 'ע (Ayin)', hebrew: 'עַבְדְּךָ אָנִי הֲבִינֵנִי וְאֵדְעָה עֵדֹתֶיךָ', pronunciation: "'Avdekha 'ani havinenni ve'ed'ah 'edoteykha", korean: '나는 주의 종이오니 나를 깨닫게 하사 주의 증거들을 알게 하소서', words: "**עֶבֶד (Eved):** 종. **בִּין (Bin):** 깨닫게 하다. **עֵדוּת (Edut):** 증거." },
-            { id: 126, section: 'ע (Ayin)', hebrew: 'עֵת לַעֲשׂוֹת לַיהוָה הֵפֵרוּ תּוֹרָתֶךָ', pronunciation: "'Et la'asot lAdonai heferu toratekha", korean: '그들이 주의 율법을 폐하였사오니 지금은 여호와께서 일하실 때니이다', words: "**עֵת ('Et):** 때. **פָּרַר (Parar):** 폐하다. **תּוֹרָה (Torah):** 율법." },
-            { id: 127, section: 'ע (Ayin)', hebrew: 'עַל־כֵּן אָהַבְתִּי מִצְוֹתֶיךָ מִזָּהָב וּמִפָּז', pronunciation: "'Al-ken 'ahavti mitzvoteykha mizzahav umipaz", korean: '그러므로 내가 주의 계명들을 금 곧 순금보다 더 사랑하나이다', words: "**אָהֵב (Ahev):** 사랑하다. **מִצְוָה (Mitzvah):** 계명. **זָהָב (Zahav):** 금. **פָּז (Paz):** 순금." },
-            { id: 128, section: 'ע (Ayin)', hebrew: 'עַל־כֵּן כָּל־פִּקּוּדֵי כֹל יִשַּׁרְתִּי כָּל־אֹרַח שֶׁקֶר שָׂנֵאתִי', pronunciation: "'Al-ken kol-piqqudei khol yishsharti kol-'orah sheqer sane'ti", korean: '그러므로 내가 모든 법도를 정직하게 여겨서 모든 거짓 행위를 미워하나이다', words: "**פִּקּוּד (Piqqud):** 법도. **יָשַׁר (Yashar):** 정직하게 하다. **שֶׁקֶר (Sheqer):** 거짓. **שָׂנֵא (Sane'):** 미워하다." },
-
-            // Pe Section (פ) - 129-136
-            { id: 129, section: 'פ (Pe)', hebrew: 'פְּלָאוֹת עֵדְוֹתֶיךָ עַל־כֵּן נְצָרָתַם נַפְשִׁי', pronunciation: "Pela'ot 'edoteykha 'al-ken netzaratam nafshi", korean: '주의 증거들이 기이하므로 내 영혼이 이를 지키나이다', words: "**פֶּלֶא (Pele'):** 기이한 일. **עֵדוּת (Edut):** 증거. **נָצַר (Natzar):** 지키다." },
-            { id: 130, section: 'פ (Pe)', hebrew: 'פֵּתַח דְּבָרֶיךָ יָאִיר מֵבִין פְּתָיִם', pronunciation: "Petah devareykha ya'ir mevin petayim", korean: '주의 말씀을 열면 빛이 비치어 우둔한 사람들을 깨닫게 하나이다', words: "**פֶּתַח (Petah):** 열림. **אוֹר (Or):** 빛. **בִּין (Bin):** 깨닫게 하다. **פְּתִי (Peti):** 우둔한 자." },
-            { id: 131, section: 'פ (Pe)', hebrew: 'פִּי פָעַרְתִּי וָאֶשְׁאַףָה כִּי לְמִצְוֹתֶיךָ יָאָבְתִּי', pronunciation: "Pi fa'arti va'esh'afah ki limitzvoteykha ya'avti", korean: '내가 주의 계명들을 사모하므로 입을 열고 헐떡였나이다', words: "**פָּעַר (Pa'ar):** 입을 열다. **שָׁאַף (Sha'af):** 헐떡이다, 사모하다. **יָאַב (Ya'av):** 사모하다." },
-            { id: 132, section: 'פ (Pe)', hebrew: 'פְּנֵה אֵלַי וְחָנֵּנִי כְּמִשְׁפָּט לְאֹהֲבֵי שְׁמֶךָ', pronunciation: "Penah 'elay vehohnneni kemishpat le'ohavei shemekha", korean: '주의 이름을 사랑하는 자들에게 베푸시던 대로 내게 돌이키사 은혜를 베푸소서', words: "**פָּנָה (Panah):** 돌이키다. **חָנַן (Hanan):** 은혜를 베풀다. **שֵׁם (Shem):** 이름." },
-            { id: 133, section: 'פ (Pe)', hebrew: 'פְּעָמַי הָכֵן בְּאִמְרָתֶךָ וְאַל־תַּשְׁלֶט־בִּי כָּל־אָוֶן', pronunciation: "Pe'amay hakhen be'imratekha ve'al-tashlet-bi khol-'aven", korean: '주의 말씀대로 나의 발걸음을 확고하게 하시고 어떤 죄악도 나를 주장하지 못하게 하소서', words: "**פַּעַם (Pa'am):** 발걸음. **כּוּן (Kun):** 확고하게 하다. **אָוֶן ('Aven):** 죄악, 불의." },
-            { id: 134, section: 'פ (Pe)', hebrew: 'פְּדֵנִי מֵעֹשֶׁק אָדָם וְאֶשְׁמְרָה פִקּוּדֶיךָ', pronunciation: "Pedeni me'osheq 'adam ve'eshm'rah piqqudekha", korean: '사람의 압제에서 나를 건지소서 그리하시면 내가 주의 법도들을 지키리이다', words: "**פָּדָה (Padah):** 건지다. **עֹשֶׁק ('Oshen):** 압제. **פִּקּוּד (Piqqud):** 법도." },
-            { id: 135, section: 'פ (Pe)', hebrew: 'פָּנֶיךָ הָאֵר בְּעַבְדֶּךָ וְלַמְּדֵנִי אֶת־חֻקֶּיךָ', pronunciation: "Paneykha ha'er be'avdekha velammedeni 'et-huqqeykha", korean: '주의 얼굴을 주의 종에게 비추시고 주의 율례들로 나를 가르치소서', words: "**פָּנֶה (Paneh):** 얼굴. **אוֹר (Or):** 빛을 비추다. **חֹק (Hoq):** 율례." },
-            { id: 136, section: 'פ (Pe)', hebrew: 'פַּלְגֵי־מַיִם יָרְדוּ עֵינָי עַל לֹא־שָׁמְרוּ תוֹרָתֶךָ', pronunciation: "Palgei-mayim yardu 'einay 'al lo-shameru toratekha", korean: '그들이 주의 율법을 지키지 아니하므로 내 눈에서 물이 시냇물 같이 흐르나이다', words: "**פֶּלֶג (Peleg):** 시내. **מַיִם (Mayim):** 물. **יָרַד (Yarad):** 흐르다. **תּוֹרָה (Torah):** 율법." },
-
-            // Tsade Section (צ) - 137-144
-            { id: 137, section: 'צ (Tsade)', hebrew: 'צַדִּיק אַתָּה יְהוָה וְיָשָׁר מִשְׁפָּטֶיךָ', pronunciation: "Tzaddiq attah Adonai veyashar mishpateykha", korean: '여호와여 주는 의로우시고 주의 규례들은 옳으니이다', words: "**צַדִּיק (Tzaddiq):** 의로운. **יָשָׁר (Yashar):** 옳은. **מִשְׁפָּט (Mishpat):** 규례." },
-            { id: 138, section: 'צ (Tsade)', hebrew: 'צִוִּיתָ צֶדֶק עֵדֹתֶיךָ וֶאֱמוּנָה מְאֹד', pronunciation: "Tzivvita tzedeq 'edoteykha ve'emunah me'od", korean: '주께서 명령하신 증거들은 의롭고 지극히 확실하니이다', words: "**צָוָה (Tzavah):** 명령하다. **צֶדֶק (Tzedeq):** 의로움. **אֱמוּנָה (Emunah):** 확실함." },
-            { id: 139, section: 'צ (Tsade)', hebrew: 'צִמְּתַתְנִי קִנְאָתִי כִּי שָׁכְחוּ דְבָרֶיךָ צָרָי', pronunciation: "Tzimmatatni qin'ati ki shakhahu devarekha tzaray", korean: '내 원수들이 주의 말씀을 잊었으므로 내 열정이 나를 소멸하였나이다', words: "**צָמַת (Tzamat):** 소멸하다. **קִנְאָה (Qin'ah):** 열정, 질투. **שָׁכַח (Shakhah):** 잊다." },
-            { id: 140, section: 'צ (Tsade)', hebrew: 'צְרוּפָה אִמְרָתְךָ מְאֹד וְעַבְדְּךָ אֲהֵבָהּ', pronunciation: "Tzerufah 'imratkha me'od ve'avdekha 'ahevah", korean: '주의 말씀이 심히 순수하므로 주의 종이 이를 사랑하나이다', words: "**צָרַף (Tzaraf):** 순수하다, 정련되다. **אִמְרָה (Imrah):** 말씀. **אָהֵב (Ahev):** 사랑하다." },
-            { id: 141, section: 'צ (Tsade)', hebrew: 'צָעִיר אָנֹכִי וְנִזְחֶה פִּקּוּדֶיךָ לֹא שָׁכָחְתִּי', pronunciation: "Tza'ir 'anokhi venizheh piqqudekha lo shakhakhti", korean: '내가 미천하고 멸시를 당하오나 주의 법도들을 잊지 아니하였나이다', words: "**צָעִיר (Tza'ir):** 미천한. **נָזַח (Nazah):** 멸시하다. **פִּקּוּד (Piqqud):** 법도." },
-            { id: 142, section: 'צ (Tsade)', hebrew: 'צִדְקָתְךָ צֶדֶק לְעוֹלָם וְתוֹרָתְךָ אֱמֶת', pronunciation: "Tzidqatkha tzedeq le'olam vetoratkha 'emet", korean: '주의 공의는 영원한 공의요 주의 율법은 진리이로소이다', words: "**צִדְקָה (Tzidqah):** 공의. **עוֹלָם (Olam):** 영원. **אֱמֶת (Emet):** 진리." },
-            { id: 143, section: 'צ (Tsade)', hebrew: 'צַר וְתָלָאָה מְצָאוּנִי מִצְוֹתֶיךָ שַׁעֲשֻׁעָי', pronunciation: "Tzar vetala'ah metza'uni mitzvoteykha sha'ashu'ay", korean: '환난과 고통이 내게 임하였으나 주의 계명은 나의 즐거움이니이다', words: "**צַר (Tzar):** 환난. **תְּלָאָה (Tela'ah):** 고통. **שַׁעֲשֻׁעִים (Sha'ashu'im):** 즐거움." },
-            { id: 144, section: 'צ (Tsade)', hebrew: 'צֶדֶק עֵדְוֹתֶיךָ לְעוֹלָם הֲבִינֵנִי וְאֶחְיֶה', pronunciation: "Tzedeq 'edoteykha le'olam havinenni ve'ehyeh", korean: '주의 증거들은 영원히 의로우니 나에게 깨달음을 주소서 그리하시면 내가 살리이다', words: "**צֶדֶק (Tzedeq):** 의로움. **עֵדוּת (Edut):** 증거. **חָיָה (Hayah):** 살다." },
-
-            // Qoph Section (ק) - 145-152
-            { id: 145, section: 'ק (Qoph)', hebrew: 'קָרָאתִי בְכָל־לֵב עֲנֵנִי יְהוָה חֻקֶּיךָ אֶצֹּרָה', pronunciation: "Qara'ti vekhol-lev 'aneni Adonai huqqeykha 'etzorah", korean: '여호와여 내가 전심으로 부르짖었사오니 내게 응답하소서 내가 주의 율례들을 지키리이다', words: "**קָרָא (Qara'):** 부르짖다. **עָנָה ('Anah):** 응답하다. **חֹק (Hoq):** 율례." },
-            { id: 146, section: 'ק (Qoph)', hebrew: 'קְרָאתִיךָ הוֹשִׁיעֵנִי וְאֶשְׁמְרָה עֵדֹתֶיךָ', pronunciation: "Qera'tikha hoshi'eni ve'eshm'rah 'edoteykha", korean: '내가 주께 부르짖었사오니 나를 구원하소서 내가 주의 증거들을 지키리이다', words: "**יָשַׁע (Yasha'):** 구원하다. **עֵדוּת (Edut):** 증거." },
-            { id: 147, section: 'ק (Qoph)', hebrew: 'קִדַּמְתִּי בַנֶּשֶׁף וָאֲשַׁוֵּעָה לִדְבָרְךָ יִחָלְתִּי', pronunciation: "Qiddamti vaneshef va'ashavve'ah lidvarekha yihalti", korean: '내가 새벽 전에 부르짖으며 주의 말씀을 바랐사오며', words: "**קָדַם (Qadam):** 먼저 일어나다. **נֶשֶׁף (Neshef):** 새벽. **שָׁוַע (Shava'):** 부르짖다." },
-            { id: 148, section: 'ק (Qoph)', hebrew: 'קִדְּמוּ עֵינַי אַשְׁמֻרוֹת לָשִׂיחַ בְּאִמְרָתֶךָ', pronunciation: "Qiddemu 'einay 'ashmurot lasiah be'imratekha", korean: '주의 말씀을 묵상하려고 내 눈이 밤중에 깨었나이다', words: "**אַשְׁמוּרָה (Ashmurah):** 밤중. **שִׂיחַ (Siah):** 묵상하다. **אִמְרָה (Imrah):** 말씀." },
-            { id: 149, section: 'ק (Qoph)', hebrew: 'קוֹלִי שִׁמְעָה כְחַסְדֶּךָ יְהוָה כְּמִשְׁפָּטֶךָ חַיֵּנִי', pronunciation: "Qoli shim'ah khehasdekha Adonai kemishpateykha hayyeni", korean: '여호와여 주의 인자하심을 따라 내 소리를 들으시고 주의 규례들을 따라 나를 살리소서', words: "**קוֹל (Qol):** 소리. **שָׁמַע (Shama'):** 듣다. **חֶסֶד (Hesed):** 인자. **חָיָה (Hayah):** 살리다." },
-            { id: 150, section: 'ק (Qoph)', hebrew: 'קָרְבוּ רֹדְפֵי זִמָּה מִתּוֹרָתְךָ רָחָקוּ', pronunciation: "Qarvu rodfei zimmah mittoratkha rahaqu", korean: '악을 따르는 자들이 가까이 왔사오니 그들은 주의 율법에서 멀리 있나이다', words: "**קָרַב (Qarav):** 가까이 오다. **זִמָּה (Zimmah):** 악, 음란. **רָחַק (Rahak):** 멀리 있다." },
-            { id: 151, section: 'ק (Qoph)', hebrew: 'קָרוֹב אַתָּה יְהוָה וְכָל־מִצְוֹתֶיךָ אֱמֶת', pronunciation: "Qarov attah Adonai vekhol-mitzvoteikha 'emet", korean: '여호와여 주께서는 가까이 계시오니 주의 모든 계명은 진리이니이다', words: "**קָרוֹב (Qarov):** 가까운. **מִצְוָה (Mitzvah):** 계명. **אֱמֶת (Emet):** 진리." },
-            { id: 152, section: 'ק (Qoph)', hebrew: 'קֶדֶם יָדַעְתִּי מֵעֵדֹתֶיךָ כִּי לְעוֹלָם יְסַדְתָּם', pronunciation: "Qedem yada'ti me'edoteykha ki le'olam yesadtam", korean: '내가 주의 증거들을 전부터 알고 있었나이다 주께서 영원히 세우신 것임을 아나이다', words: "**קֶדֶם (Qedem):** 옛날, 전부터. **יָדַע (Yada'):** 알다. **יָסַד (Yasad):** 세우다, 기초를 놓다." },
-
-            // Resh Section (ר) - 153-160
-            { id: 153, section: 'ר (Resh)', hebrew: 'רְאֵה עָנְיִי וְחַלְּצֵנִי כִּי תוֹרָתְךָ לֹא שָׁכָחְתִּי', pronunciation: "Re'eh 'onyi vehaltzeni ki toratkha lo shakhakhti", korean: '나의 고난을 보시고 나를 건지소서 내가 주의 율법을 잊지 아니함이니이다', words: "**רָאָה (Ra'ah):** 보다. **עֹנִי ('Oni):** 고난. **חָלַץ (Halatz):** 건지다. **תּוֹרָה (Torah):** 율법." },
-            { id: 154, section: 'ר (Resh)', hebrew: 'רִיבָה רִיבִי וּגְאָלֵנִי לְאִמְרָתְךָ חַיֵּנִי', pronunciation: "Rivah rivi uge'aleni le'imratkha hayyeni", korean: '나의 억울함을 풀어 주시고 나를 구원하시며 주의 말씀대로 나를 살리소서', words: "**רִיב (Riv):** 억울함. **גָּאַל (Ga'al):** 구원하다, 속량하다. **חָיָה (Hayah):** 살리다." },
-            { id: 155, section: 'ר (Resh)', hebrew: 'רָחוֹק מֵרְשָׁעִים יְשׁוּעָה כִּי חֻקֶּיךָ לֹא דָרָשׁוּ', pronunciation: "Rahok meresha'im yeshu'ah ki huqqeykha lo darashu", korean: '구원은 악인들에게서 멀리 떠났으니 이는 그들이 주의 율례들을 구하지 아니함이니이다', words: "**רָחוֹק (Rahok):** 먼. **רָשָׁע (Rasha'):** 악인. **יְשׁוּעָה (Yeshu'ah):** 구원. **חֹק (Hoq):** 율례." },
-            { id: 156, section: 'ר (Resh)', hebrew: 'רַחֲמֶיךָ רַבִּים יְהוָה כְּמִשְׁפָּטֶיךָ חַיֵּנִי', pronunciation: "Rahamykha rabbim Adonai kemishpateykha hayyeni", korean: '여호와여 주의 긍휼이 많으니 주의 규례들을 따라 나를 살리소서', words: "**רַחֲמִים (Rahamim):** 긍휼. **רַב (Rav):** 많은. **מִשְׁפָּט (Mishpat):** 규례." },
-            { id: 157, section: 'ר (Resh)', hebrew: 'רַבִּים רֹדְפַי וְצָרָי מֵעֵדְוֹתֶיךָ לֹא נָטִיתִי', pronunciation: "Rabbim rod'fay vetzaray me'edoteykha lo natiti", korean: '나를 핍박하고 괴롭히는 자가 많으나 나는 주의 증거들에서 떠나지 아니하였나이다', words: "**רָדַף (Radaf):** 핍박하다. **צַר (Tzar):** 괴롭히는 자. **נָטָה (Natah):** 떠나다." },
-            { id: 158, section: 'ר (Resh)', hebrew: 'רָאִיתִי בֹגְדִים וָאֶתְקוֹטָט כִּי אִמְרָתְךָ לֹא שָׁמָרוּ', pronunciation: "Ra'iti vogedim va'etqotat ki 'imratkha lo shamaru", korean: '주의 말씀을 지키지 아니하는 배신자들을 보고 내가 몹시 슬퍼하였나이다', words: "**בָּגַד (Bagad):** 배신하다. **קוּט (Qut):** 슬퍼하다. **שָׁמַר (Shamar):** 지키다." },
-            { id: 159, section: 'ר (Resh)', hebrew: 'רְאֵה כִּי פִקּוּדֶיךָ אָהָבְתִּי יְהוָה כְּחַסְדְּךָ חַיֵּנִי', pronunciation: "Re'eh ki piqqudekha 'ahavti Adonai khehasdekha hayyeni", korean: '내가 주의 법도들을 사랑함을 보옵소서 여호와여 주의 인자하심을 따라 나를 살리소서', words: "**אָהֵב (Ahev):** 사랑하다. **פִּקּוּד (Piqqud):** 법도. **חֶסֶד (Hesed):** 인자." },
-            { id: 160, section: 'ר (Resh)', hebrew: 'רֹאשׁ־דְּבָרְךָ אֱמֶת וּלְעוֹלָם כָּל־מִשְׁפַּט צִדְקֶךָ', pronunciation: "Ro'sh-devarkha 'emet ule'olam kol-mishpat tzidqekha", korean: '주의 말씀의 근본은 진리이오니 주의 의로운 모든 규례는 영원하리이다', words: "**רֹאשׁ (Ro'sh):** 근본, 머리. **אֱמֶת (Emet):** 진리. **צֶדֶק (Tzedeq):** 의로움." },
-
-            // Sin/Shin Section (ש) - 161-168
-            { id: 161, section: 'ש (Shin/Sin)', hebrew: 'שָׂרִים רְדָפוּנִי חִנָּם וּמִדְּבָרְךָ פָּחַד לִבִּי', pronunciation: "Sarim radafuni hinnām umiddevarkha pahad libbi", korean: '고관들이 까닭 없이 나를 핍박하오나 나의 마음은 주의 말씀만 경외하나이다', words: "**שַׂר (Sar):** 고관. **רָדַף (Radaf):** 핍박하다. **פַּחַד (Pahad):** 경외하다, 두려워하다." },
-            { id: 162, section: 'ש (Shin/Sin)', hebrew: 'שָׂשׂ אָנֹכִי עַל־אִמְרָתֶךָ כְּמוֹצֵא שָׁלָל רָב', pronunciation: "Sas anokhi 'al-'imratekha kemotze shalal rav", korean: '내가 주의 말씀을 즐거워함이 큰 전리품을 얻은 것 같으니이다', words: "**שׂוּשׂ (Sus):** 즐거워하다. **אִמְרָה (Imrah):** 말씀. **שָׁלָל (Shalal):** 전리품." },
-            { id: 163, section: 'ש (Shin/Sin)', hebrew: 'שֶׁקֶר שָׂנֵאתִי וַאֲתַעֲבֵה תּוֹרָתְךָ אָהָבְתִּי', pronunciation: "Sheqer sane'ti va'ata'aveh toratkha 'ahavti", korean: '내가 거짓을 미워하고 싫어하며 주의 율법을 사랑하나이다', words: "**שֶׁקֶר (Sheqer):** 거짓. **שָׂנֵא (Sane'):** 미워하다. **תָּעַב (Ta'av):** 싫어하다. **תּוֹרָה (Torah):** 율법." },
-            { id: 164, section: 'ש (Shin/Sin)', hebrew: 'שֶׁבַע בַּיּוֹם הִלַּלְתִּיךָ עַל מִשְׁפְּטֵי צִדְקֶךָ', pronunciation: "Sheva' bayyom hillaltikha 'al mishpetei tzidqekha", korean: '주의 의로운 규례들로 말미암아 내가 하루 일곱 번씩 주를 찬양하나이다', words: "**שֶׁבַע (Sheva'):** 일곱. **הָלַל (Halal):** 찬양하다. **מִשְׁפָּט (Mishpat):** 규례." },
-            { id: 165, section: 'ש (Shin/Sin)', hebrew: 'שָׁלוֹם רָב לְאֹהֲבֵי תוֹרָתֶךָ וְאֵין לָמוֹ מִכְשׁוֹל', pronunciation: "Shalom rav le'ohavei toratekha ve'ein lamo mikhshol", korean: '주의 율법을 사랑하는 자에게는 큰 평안이 있으니 그들에게 장애물이 없으리이다', words: "**שָׁלוֹם (Shalom):** 평안. **רַב (Rav):** 많은. **מִכְשׁוֹל (Mikhshol):** 장애물, 넘어짐." },
-            { id: 166, section: 'ש (Shin/Sin)', hebrew: 'שִׂבַּרְתִּי לִישׁוּעָתְךָ יְהוָה וּמִצְוֹתֶיךָ עָשִׂיתִי', pronunciation: "Sibbarti lishu'atkha Adonai umitzvoteykha 'asiti", korean: '여호와여 내가 주의 구원을 바랐으며 주의 계명들을 행하였나이다', words: "**שָׂבַר (Savar):** 바라다, 기대하다. **יְשׁוּעָה (Yeshu'ah):** 구원. **מִצְוָה (Mitzvah):** 계명." },
-            { id: 167, section: 'ש (Shin/Sin)', hebrew: 'שָׁמְרָה נַפְשִׁי עֵדֹתֶיךָ וָאֹהֲבֵם מְאֹד', pronunciation: "Sham'rah nafshi 'edoteykha va'ohavem me'od", korean: '내 영혼이 주의 증거들을 지켰사오며 내가 이를 심히 사랑하나이다', words: "**שָׁמַר (Shamar):** 지키다. **נֶפֶשׁ (Nefesh):** 영혼. **אָהֵב (Ahev):** 사랑하다." },
-            { id: 168, section: 'ש (Shin/Sin)', hebrew: 'שָׁמַרְתִּי פִקּוּדֶיךָ וְעֵדֹתֶיךָ כִּי כָל־דְּרָכַי נֶגְדֶּךָ', pronunciation: "Shamarti piqqudekha ve'edoteykha ki khol-derakhay negdekha", korean: '내가 주의 법도들과 증거들을 지켰사오니 이는 나의 모든 행위가 주 앞에 있음이니이다', words: "**פִּקּוּד (Piqqud):** 법도. **עֵדוּת (Edut):** 증거. **נֶגֶד (Neged):** 앞에." },
-
-            // Tav Section (ת) - 169-176
-            { id: 169, section: 'ת (Tav)', hebrew: 'תִּקְרַב רִנָּתִי לְפָנֶיךָ יְהוָה כְּאִמְרָתְךָ הֲבִינֵנִי', pronunciation: "Tiqrav rinnati lefaneykha Adonai ke'imratkha havinenni", korean: '여호와여 나의 부르짖음이 주 앞에 이르게 하시고 주의 말씀대로 나를 깨닫게 하소서', words: "**רִנָּה (Rinnah):** 부르짖음. **קָרַב (Qarav):** 가까이 이르게 하다. **בִּין (Bin):** 깨닫게 하다." },
-            { id: 170, section: 'ת (Tav)', hebrew: 'תָּבוֹא תְחִנָּתִי לְפָנֶיךָ כְּאִמְרָתְךָ הַצִּילֵנִי', pronunciation: "Tavo tehinati lefaneykha ke'imratkha hatzileni", korean: '나의 간구가 주 앞에 이르게 하시고 주의 말씀대로 나를 건지소서', words: "**תְּחִנָּה (Tehinnah):** 간구. **נָצַל (Natzal):** 건지다." },
-            { id: 171, section: 'ת (Tav)', hebrew: 'תַּבַּעְנָה שְׂפָתַי תְּהִלָּה כִּי תְלַמְּדֵנִי חֻקֶּיךָ', pronunciation: "Tabb'anah sefatay tehillah ki telammedeni huqqeykha", korean: '주께서 내게 율례들을 가르치시므로 내 입술이 찬송을 부르리이다', words: "**נָבַע (Nava'):** 부르다, 흘러나오다. **תְּהִלָּה (Tehillah):** 찬송. **חֹק (Hoq):** 율례." },
-            { id: 172, section: 'ת (Tav)', hebrew: 'תַּעַן לְשׁוֹנִי אִמְרָתֶךָ כִּי כָל־מִצְוֹתֶיךָ צֶדֶק', pronunciation: "Ta'an leshoni 'imratekha ki khol-mitzvoteykha tzedeq", korean: '내 혀가 주의 말씀을 노래하리니 이는 주의 모든 계명이 의로움이니이다', words: "**עָנָה ('Anah):** 노래하다. **לָשׁוֹן (Lashon):** 혀. **צֶדֶק (Tzedeq):** 의로움." },
-            { id: 173, section: 'ת (Tav)', hebrew: 'תְּהִי־יָדְךָ לְעָזְרֵנִי כִּי פִקּוּדֶיךָ בָחָרְתִּי', pronunciation: "Tehi-yadkha le'ozreni ki piqqudekha vaharti", korean: '내가 주의 법도들을 택하였사오니 주의 손이 항상 나를 돕게 하소서', words: "**עָזַר ('Azar):** 돕다. **יָד (Yad):** 손. **בָּחַר (Bahar):** 택하다." },
-            { id: 174, section: 'ת (Tav)', hebrew: 'תָּאַבְתִּי לִישׁוּעָתְךָ יְהוָה וְתוֹרָתְךָ שַׁעֲשֻׁעָי', pronunciation: "Ta'avti lishu'atkha Adonai vetoratkha sha'ashu'ay", korean: '여호와여 내가 주의 구원을 사모하였사오며 주의 율법은 나의 즐거움이니이다', words: "**תָּאַב (Ta'av):** 사모하다. **יְשׁוּעָה (Yeshu'ah):** 구원. **שַׁעֲשֻׁעִים (Sha'ashu'im):** 즐거움." },
-            { id: 175, section: 'ת (Tav)', hebrew: 'תְּחִי נַפְשִׁי וּתְהַלְלֶךָ וּמִשְׁפָּטֶךָ יַעְזְרֻנִי', pronunciation: "Tehi nafshi uth'hallelekha umishpateykha ya'zeruni", korean: '내 영혼을 살게 하소서 그리하시면 주를 찬양하리이다 주의 규례들이 나를 돕게 하소서', words: "**חָיָה (Hayah):** 살게 하다. **הָלַל (Halal):** 찬양하다. **עָזַר ('Azar):** 돕다." },
-            { id: 176, section: 'ת (Tav)', hebrew: 'תָּעִיתִי כְּשֶׂה אֹבֵד בַּקֵּשׁ עַבְדֶּךָ כִּי מִצְוֹתֶיךָ לֹא שָׁכָחְתִּי', pronunciation: "Ta'iti kesseh 'oved baqqesh 'avdekha ki mitzvoteykha lo shakhakhti", korean: '내가 잃은 양 같이 방황하오니 주의 종을 찾으소서 내가 주의 계명들을 잊지 아니함이니이다', words: "**תָּעָה (Ta'ah):** 방황하다. **שֶׂה (Seh):** 양. **אָבַד ('Avad):** 잃어버리다. **בָּקַשׁ (Baqash):** 찾다." }
+        // --- 데이터 정의 (시편 119편의 일부 절만 포함) ---
+        const PSALM_119_DATA = [
+          // Stanza 1: Aleph (א) - Verses 1-8
+          {
+            hebrewLetter: "א (Aleph)",
+            startVerse: 1,
+            endVerse: 8,
+            verses: [
+              {
+                verse: 1,
+                hebrew: "אַשְׁרֵי תְמִימֵי־דָרֶךְ הַהֹלְכִים בְּתוֹרַת יְהוָה׃",
+                translation: "행위가 온전하여 여호와의 율법을 따라 행하는 자들은 복이 있음이여.",
+                words: [
+                  { h: "אַשְׁרֵי", t: "Ashrei", m: "복이 있는", r: "Interjection" },
+                  { h: "תְמִימֵי־דָרֶךְ", t: "temimei-darekh", m: "길이 온전한 자들", r: "Noun phrase" },
+                  { h: "הַהֹלְכִים", t: "hahol'khim", m: "걷는 자들", r: "Verb (Piel Participle)" },
+                  { h: "בְּתוֹרַת", t: "b'torat", m: "율법 안에", r: "Noun (Torah)" },
+                  { h: "יְהוָה", t: "YHWH", m: "여호와", r: "Proper Noun" }
+                ]
+              },
+              {
+                verse: 2,
+                hebrew: "אַשְׁרֵי שֹׁמְרֵי עֵדֹתָיו בְּכָל־לֵב יִדְרְשׁוּהוּ׃",
+                translation: "여호와의 증거들을 지키고 전심으로 여호와를 구하는 자들은 복이 있도다.",
+                words: [
+                  { h: "אַשְׁרֵי", t: "Ashrei", m: "복이 있는", r: "Interjection" },
+                  { h: "שֹׁמְרֵי", t: "shom'rei", m: "지키는 자들", r: "Verb (Qal Participle)" },
+                  { h: "עֵדֹתָיו", t: "edotav", m: "그의 증거들", r: "Noun" },
+                  { h: "בְּכָל־לֵב", t: "b'khol-lev", m: "온 마음으로", r: "Prepositional Phrase" },
+                  { h: "יִדְרְשׁוּהוּ", t: "yidr'shuhu", m: "그를 구하는", r: "Verb (Qal Imperfect)" }
+                ]
+              },
+              {
+                verse: 3,
+                hebrew: "אַף לֹא־פָעֲלוּ עַוְלָה בִּדְרָכָיו הָלָכוּ׃",
+                translation: "또 저희는 불의를 행치 아니하고 그의 도를 행하는도다.",
+                words: [
+                  { h: "אַף", t: "Af", m: "또한", r: "Adverb" },
+                  { h: "לֹא־פָעֲלוּ", t: "lo-fa'alu", m: "행하지 않았다", r: "Verb (Qal Perfect)" },
+                  { h: "עַוְלָה", t: "avlah", m: "불의", r: "Noun" },
+                  { h: "בִּדְרָכָיו", t: "bidrakhav", m: "그의 길에서", r: "Prepositional Phrase" },
+                  { h: "הָלָכוּ", t: "halakhu", m: "그들이 걸었다", r: "Verb (Qal Perfect)" }
+                ]
+              },
+              {
+                verse: 4,
+                hebrew: "אַתָּה צִוִּיתָה פִקֻּדֶיךָ לִשְׁמֹר מְאֹד׃",
+                translation: "주께서 명령하사 주의 법도를 열심히 지키게 하셨나이다.",
+                words: [
+                  { h: "אַתָּה", t: "Atah", m: "주께서", r: "Pronoun" },
+                  { h: "צִוִּיתָה", t: "tzivvita", m: "명령하셨다", r: "Verb (Piel Perfect)" },
+                  { h: "פִקֻּדֶיךָ", t: "pikkudeikha", m: "주의 법도", r: "Noun" },
+                  { h: "לִשְׁמֹר", t: "lishmor", m: "지키도록", r: "Verb (Qal Infinitive)" },
+                  { h: "מְאֹד", t: "me'od", m: "심히", r: "Adverb" }
+                ]
+              },
+              {
+                verse: 5,
+                hebrew: "אַחֲלַי כִּי־יִכֹּנוּ דְרָכָי לִשְׁמֹר חֻקֶּיךָ׃",
+                translation: "내 길을 정돈하사 주의 율례를 지키게 하소서.",
+                words: [
+                  { h: "אַחֲלַי", t: "Aḥalai", m: "오! 그랬으면", r: "Interjection" },
+                  { h: "כִּי־יִכֹּנוּ", t: "ki-yikonu", m: "내 길이 굳게 서서", r: "Conjunction + Verb" },
+                  { h: "דְרָכָי", t: "d'rakhai", m: "나의 길들", r: "Noun" },
+                  { h: "לִשְׁמֹר", t: "lishmor", m: "지키도록", r: "Verb (Qal Infinitive)" },
+                  { h: "חֻקֶּיךָ", t: "ḥuqqeikha", m: "주의 율례", r: "Noun" }
+                ]
+              },
+              {
+                verse: 6,
+                hebrew: "אָז לֹא אֵבוֹשׁ בְּהַבִּיטִי אֶל־כָּל־מִצְוֹתֶיךָ׃",
+                translation: "내가 주의 모든 계명에 주의할 때에는 부끄럽지 아니하리이다.",
+                words: [
+                  { h: "אָז", t: "Az", m: "그 때에", r: "Adverb" },
+                  { h: "לֹא", t: "lo", m: "아니다", r: "Negative Particle" },
+                  { h: "אֵבוֹשׁ", t: "evosh", m: "부끄럽지 않으리", r: "Verb (Qal Imperfect)" },
+                  { h: "בְּהַבִּיטִי", t: "b'habbiti", m: "내가 볼 때", r: "Preposition + Verb" },
+                  { h: "אֶל־כָּל־מִצְוֹתֶיךָ", t: "el-kol-mitzvoteikha", m: "주의 모든 계명", r: "Prepositional Phrase" }
+                ]
+              },
+              {
+                verse: 7,
+                hebrew: "אוֹדְךָ בְּיֹשֶׁר לֵבָב בְּלָמְדִי מִשְׁפְּטֵי צִדְקֶךָ׃",
+                translation: "내가 주의 의로운 판단을 배울 때에는 정직한 마음으로 주께 감사하리이다.",
+                words: [
+                  { h: "אוֹדְךָ", t: "Od'kha", m: "내가 주께 감사하리", r: "Verb (Hiphil Imperfect)" },
+                  { h: "בְּיֹשֶׁר", t: "b'yosher", m: "정직함으로", r: "Preposition + Noun" },
+                  { h: "לֵבָב", t: "levav", m: "마음", r: "Noun" },
+                  { h: "בְּלָמְדִי", t: "b'lomdi", m: "내가 배울 때", r: "Preposition + Verb" },
+                  { h: "מִשְׁפְּטֵי", t: "mishp'tei", m: "판단들", r: "Noun" },
+                  { h: "צִדְקֶךָ", t: "tzid'qekha", m: "주의 의", r: "Noun" }
+                ]
+              },
+              {
+                verse: 8,
+                hebrew: "אֶת־חֻקֶּיךָ אֶשְׁמֹר אַל־תַּעַזְבֵנִי עַד־מְאֹד׃",
+                translation: "내가 주의 율례들을 지키오리니 나를 아주 버리지 마옵소서.",
+                words: [
+                  { h: "אֶת־חֻקֶּיךָ", t: "et-ḥuqqeikha", m: "주의 율례를", r: "Object Marker + Noun" },
+                  { h: "אֶשְׁמֹר", t: "esh'mor", m: "내가 지키리", r: "Verb (Qal Imperfect)" },
+                  { h: "אַל־תַּעַזְבֵנִי", t: "al-ta'azveni", m: "나를 버리지 마소서", r: "Negative Particle + Verb (Qal Imperfect)" },
+                  { h: "עַד־מְאֹד", t: "ad-m'od", m: "심히(완전히)", r: "Prepositional Phrase" }
+                ]
+              },
+            ]
+          },
+          // Stanza 2: Bet (ב) - Verses 9-16
+          {
+            hebrewLetter: "ב (Bet)",
+            startVerse: 9,
+            endVerse: 16,
+            verses: [
+              {
+                verse: 9,
+                hebrew: "בַּמֶּה יְזַכֶּה־נַּעַר אֶת־אֹרְחוֹ לִשְׁמֹר כִּדְבָרֶךָ׃",
+                translation: "청년이 무엇으로 그 행실을 깨끗케 하리이까 주의 말씀을 따라 삼갈 것이니이다.",
+                words: [
+                  { h: "בַּמֶּה", t: "Bameh", m: "무엇으로", r: "Interrogative" },
+                  { h: "יְזַכֶּה־נַּעַר", t: "yezakeh-na'ar", m: "청년이 깨끗하게 할까요", r: "Verb (Piel Imperfect) + Noun" },
+                  { h: "אֶת־אֹרְחוֹ", t: "et-orḥo", m: "그의 길", r: "Object Marker + Noun" },
+                  { h: "לִשְׁמֹר", t: "lishmor", m: "지키도록", r: "Verb (Qal Infinitive)" },
+                  { h: "כִּדְבָרֶךָ", t: "kidvarekha", m: "주의 말씀대로", r: "Prepositional Phrase" }
+                ]
+              },
+              {
+                verse: 10,
+                hebrew: "בְּכָל־לִבִּי דְרַשְׁתִּיךָ אַל־תַּשְׁגֵּנִי מִמִּצְוֹתֶיךָ׃",
+                translation: "내가 전심으로 주를 찾았사오니 주의 계명에서 떠나지 말게 하소서.",
+                words: [
+                  { h: "בְּכָל־לִבִּי", t: "B'khol-libi", m: "나의 온 마음으로", r: "Prepositional Phrase" },
+                  { h: "דְרַשְׁתִּיךָ", t: "d'rashtikha", m: "내가 주를 찾았다", r: "Verb (Qal Perfect)" },
+                  { h: "אַל־תַּשְׁגֵּנִי", t: "al-tash'geni", m: "내가 떠나게 하지 마소서", r: "Negative Particle + Verb (Hiphil Imperfect)" },
+                  { h: "מִמִּצְוֹתֶיךָ", t: "mimit͡svoteikha", m: "주의 계명으로부터", r: "Prepositional Phrase" }
+                ]
+              }
+            ]
+          },
         ];
 
-        let isHidden = true; // 초기 상태: 번역과 단어 뜻을 숨김
-
-        function renderVerses(data) {
-            const container = document.getElementById('psalm-analysis-container');
-            container.innerHTML = '';
-            let currentSection = '';
-            
-            if (data.length === 0) {
-                container.innerHTML = '<p class="text-center text-red-400 py-8 text-lg font-semibold">검색 결과가 없습니다. 다른 키워드로 다시 시도해 보세요.</p>';
-                return;
+        // --- 유틸리티 함수 ---
+        const findVerseByNumber = (verseNum) => {
+          for (const stanza of PSALM_119_DATA) {
+            for (const verse of stanza.verses) {
+              if (verse.verse === verseNum) {
+                return verse;
+              }
             }
-
-            data.forEach(verse => {
-                // 새로운 문단이 시작될 때 제목 추가
-                if (verse.section !== currentSection) {
-                    const sectionHeader = document.createElement('h4');
-                    // 모바일 최적화를 위해 크기 조정
-                    const sectionName = verse.section.split(' ')[1];
-                    const hebrewLetter = verse.section.split(' ')[0];
-                    sectionHeader.className = 'section-separator text-xl sm:text-2xl font-bold text-yellow-300 border-b border-gray-600 pb-2 mb-4 sticky top-0 bg-gray-800/95 z-10'; // Sticky header for large lists
-                    sectionHeader.textContent = `[${hebrewLetter}] ${sectionName} 문단 (${verse.id}절부터)`;
-                    container.appendChild(sectionHeader);
-                    currentSection = verse.section;
-                }
-
-                // 절 카드 생성
-                const verseCard = document.createElement('div');
-                verseCard.className = 'bg-gray-700/50 p-4 mb-4 rounded-lg shadow-xl hover:bg-gray-700 transition duration-150';
-
-                // 1. 절 번호 및 히브리어 원문
-                verseCard.innerHTML = `
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-xl font-extrabold text-teal-400">${verse.id}절</span>
-                        <span class="text-xs text-gray-400">${verse.section}</span>
-                    </div>
-                    <p class="hebrew-text text-white mb-3 text-right">${verse.hebrew}</p>
-                `;
-
-                // 2. 발음 (Transliteration)
-                verseCard.innerHTML += `
-                    <div class="text-sm text-gray-400 border-t border-gray-600 pt-2">
-                        <span class="font-semibold text-gray-500">발음:</span> ${verse.pronunciation}
-                    </div>
-                `;
-                
-                // 3. 개역개정 (Translation)
-                const translationDiv = document.createElement('div');
-                translationDiv.className = `translation-content pt-2 ${isHidden ? 'hidden' : ''}`;
-                translationDiv.innerHTML = `
-                    <div class="mt-2 border-t border-gray-600 pt-2">
-                        <p class="text-base text-gray-300 font-medium">
-                            <span class="font-semibold text-indigo-400">번역:</span> ${verse.korean}
-                        </p>
-                    </div>
-                `;
-                
-                // 4. 단어 뜻 (Words)
-                const wordsDiv = document.createElement('div');
-                wordsDiv.className = `words-content mt-2 border-t border-gray-600 pt-2 ${isHidden ? 'hidden' : ''}`;
-                wordsDiv.innerHTML = `
-                    <p class="text-sm text-gray-400">
-                        <span class="font-semibold text-orange-400">주요 단어 뜻:</span> ${verse.words}
-                    </p>
-                `;
-                
-                verseCard.appendChild(translationDiv);
-                verseCard.appendChild(wordsDiv);
-                container.appendChild(verseCard);
-            });
-        }
-
-        function toggleVisibility() {
-            isHidden = !isHidden;
-            const toggleText = document.getElementById('toggle-text');
-            
-            // 모든 숨겨진 내용 요소 찾기
-            const translationElements = document.querySelectorAll('.translation-content, .words-content');
-            
-            translationElements.forEach(el => {
-                if (isHidden) {
-                    el.classList.add('hidden');
-                } else {
-                    el.classList.remove('hidden');
-                }
-            });
-
-            // 버튼 텍스트 업데이트
-            if (isHidden) {
-                toggleText.textContent = '개역개정 / 단어 뜻 보이기';
-            } else {
-                toggleText.textContent = '개역개정 / 단어 뜻 가리기';
-            }
-        }
-
-        function filterVerses() {
-            const input = document.getElementById('filter-input').value.toLowerCase();
-            const filteredData = psalmData.filter(verse => {
-                // 절 번호, 히브리어, 발음, 한국어 번역, 단어 뜻에서 모두 검색
-                return (
-                    String(verse.id).includes(input) ||
-                    verse.section.toLowerCase().includes(input) ||
-                    verse.hebrew.toLowerCase().includes(input) ||
-                    verse.pronunciation.toLowerCase().includes(input) ||
-                    verse.korean.toLowerCase().includes(input) ||
-                    verse.words.toLowerCase().includes(input)
-                );
-            });
-
-            renderVerses(filteredData);
-        }
-
-        // 초기 로딩 시 앱 렌더링
-        window.onload = function() {
-            // 초기 상태는 'isHidden' = true (가리기)에 맞춰 버튼 텍스트를 설정하기 위해 먼저 toggleVisibility를 호출하지 않고 렌더링
-            renderVerses(psalmData); 
-            document.getElementById('toggle-text').textContent = '개역개정 / 단어 뜻 보이기';
+          }
+          return PSALM_119_DATA[0].verses[0];
         };
 
+        // --- 컴포넌트: 단어 상세 모달 ---
+        const WordDetailModal = ({ selectedWord, onClose }) => {
+          if (!selectedWord) return null;
+
+          return (
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 transition-opacity duration-300"
+              onClick={onClose}
+            >
+              <div 
+                className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 transform transition-all duration-300 scale-100"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex justify-between items-start border-b pb-3 mb-4">
+                  <h3 className="text-3xl font-bold text-gray-800 hebrew-text" dir="rtl">{selectedWord.h}</h3>
+                  <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-100">
+                    <X size={24} />
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-xs font-semibold text-gray-600 mb-1">음역 (Transliteration)</p>
+                    <p className="text-lg font-mono text-indigo-700">{selectedWord.t}</p>
+                  </div>
+                  
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-xs font-semibold text-gray-600 mb-1">의미 (Meaning)</p>
+                    <p className="text-lg text-gray-800">{selectedWord.m}</p>
+                  </div>
+
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-xs font-semibold text-gray-600 mb-1">품사/구조 (Part of Speech)</p>
+                    <p className="text-base text-gray-700">{selectedWord.r}</p>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={onClose} 
+                  className="mt-6 w-full py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors active:bg-indigo-800"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          );
+        };
+
+
+        // --- 컴포넌트: 메인 앱 ---
+        const App = () => {
+          const [currentVerseNum, setCurrentVerseNum] = useState(1);
+          const [selectedWord, setSelectedWord] = useState(null);
+
+          // 현재 절 정보를 메모이제이션
+          const currentVerse = useMemo(() => findVerseByNumber(currentVerseNum), [currentVerseNum]);
+          
+          // 현재 Stanza 정보
+          const currentStanza = useMemo(() => 
+            PSALM_119_DATA.find(s => s.startVerse <= currentVerseNum && s.endVerse >= currentVerseNum) || PSALM_119_DATA[0]
+          , [currentVerseNum]);
+
+          // 마지막 절 번호 (현재 데이터 범위)
+          const lastAvailableVerse = 10;
+
+          // 단어 클릭 핸들러
+          const handleWordClick = (word) => {
+            setSelectedWord(word);
+          };
+
+          // 다음/이전 절 이동
+          const navigateVerse = (direction) => {
+            const nextVerseNum = currentVerseNum + direction;
+            if (nextVerseNum >= 1 && nextVerseNum <= lastAvailableVerse) {
+              setCurrentVerseNum(nextVerseNum);
+            }
+          };
+
+          // 렌더링을 위해 히브리어 텍스트를 단어 배열로 분리 (단어별 띄어쓰기 기준으로만 단순 분리)
+          const hebrewWords = useMemo(() => {
+              const text = currentVerse.hebrew;
+              const dataWords = currentVerse.words;
+              
+              // 띄어쓰기, 구두점을 포함하여 텍스트를 분리 (React의 인라인 요소로 만듦)
+              const segments = text.split(/([ \u0590-\u05FF]+)/).filter(s => s.length > 0);
+              
+              let wordIndex = 0;
+              return segments.map((segment, index) => {
+                  // 히브리어 단어이거나 단어 + 구두점인 경우 (단어 객체와 매핑)
+                  if (segment.match(/[\u0590-\u05FF]/) && !segment.trim().match(/^[ \u0590-\u05FF]+$/)) { 
+                      const wordData = dataWords[wordIndex];
+                      wordIndex++;
+
+                      if (wordData) {
+                          return (
+                              <span
+                                  key={index}
+                                  className="inline-block mx-1 py-1 px-2 rounded-lg cursor-pointer transition-all duration-200 hover:bg-yellow-100 hover:shadow-md active:scale-95 text-gray-900"
+                                  onClick={() => handleWordClick(wordData)}
+                              >
+                                  {wordData.h}
+                              </span>
+                          );
+                      }
+                  }
+                  // 공백, 구두점, 기타 세그먼트 처리
+                  return <span key={index} className="inline-block mx-0.5">{segment}</span>;
+              }).filter(Boolean);
+          }, [currentVerse]);
+
+
+          return (
+            <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+              
+              {/* 상단 헤더 */}
+              <header className="bg-indigo-600 text-white shadow-lg p-4 sticky top-0 z-10">
+                <div className="flex justify-between items-center max-w-2xl mx-auto">
+                  <div className="flex items-center space-x-2">
+                    <BookOpen size={24} />
+                    <h1 className="text-xl font-bold">시편 119편 히브리어 학습</h1>
+                  </div>
+                  <button 
+                    className="p-2 rounded-full bg-indigo-700 hover:bg-indigo-800 transition-colors active:bg-indigo-900"
+                    onClick={() => setCurrentVerseNum(1)}
+                    title="첫 절로 이동"
+                  >
+                    <Home size={20} />
+                  </button>
+                </div>
+              </header>
+
+              {/* 메인 콘텐츠 영역 */}
+              <main className="flex-grow p-4 max-w-2xl mx-auto w-full pb-20">
+                
+                {/* 절 정보 카드 */}
+                <div className="bg-white rounded-xl shadow-xl p-5 mb-6 border-t-4 border-indigo-500">
+                  
+                  <p className="text-sm font-semibold text-indigo-500 mb-2">
+                    연(Stanza): {currentStanza.hebrewLetter} | 현재 절: <span className="text-2xl font-extrabold text-indigo-700">{currentVerseNum}</span>절 (총 176절 중)
+                  </p>
+
+                  <h2 
+                    className="text-4xl sm:text-5xl text-right my-4 leading-relaxed font-serif text-gray-900 hebrew-text" 
+                    dir="rtl"
+                  >
+                    {hebrewWords}
+                  </h2>
+
+                  <div className="mt-5 pt-4 border-t border-gray-100">
+                    <p className="text-xs font-semibold text-gray-500">개역개정 번역 (Korean Translation)</p>
+                    <p className="text-base text-gray-700 leading-relaxed mt-1">
+                      {currentVerse.translation}
+                    </p>
+                  </div>
+                  
+                </div>
+
+                {/* 네비게이션 버튼 */}
+                <div className="flex justify-between items-center space-x-4">
+                  <button 
+                    onClick={() => navigateVerse(-1)} 
+                    disabled={currentVerseNum <= 1}
+                    className="flex items-center justify-center w-full py-3 bg-gray-200 text-gray-700 font-bold rounded-lg shadow-md hover:bg-gray-300 disabled:opacity-50 transition-all active:bg-gray-400"
+                    aria-label="이전 절"
+                  >
+                    <ChevronLeft size={20} className="mr-1" /> 이전 절
+                  </button>
+                  
+                  <button 
+                    onClick={() => navigateVerse(1)} 
+                    disabled={currentVerseNum >= lastAvailableVerse}
+                    className="flex items-center justify-center w-full py-3 bg-indigo-500 text-white font-bold rounded-lg shadow-md hover:bg-indigo-600 disabled:opacity-50 transition-all active:bg-indigo-700"
+                    aria-label="다음 절"
+                  >
+                    다음 절 <ChevronRight size={20} className="ml-1" />
+                  </button>
+                </div>
+
+                <p className="text-center text-xs text-gray-400 mt-4">
+                    단어를 탭(터치)하면 상세 정보가 팝업됩니다. (현재 1~10절 데이터만 포함됨)
+                </p>
+              </main>
+
+              {/* 단어 상세 모달 */}
+              <WordDetailModal 
+                selectedWord={selectedWord} 
+                onClose={() => setSelectedWord(null)} 
+              />
+            </div>
+          );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+
+    <script>
+        // PWA Manifest와 Service Worker를 인라인으로 처리하여 단일 파일로 동작하도록 설정
+
+        // 1. Manifest 파일 역할을 하는 Blob 생성 및 URL 설정
+        const manifestData = {
+          "name": "시편 119편 히브리어 학습",
+          "short_name": "시편119",
+          "description": "시편 119편 히브리어 단어별 학습 앱",
+          "start_url": "./psalm119_pwa_single.html", // 이 파일의 이름으로 변경
+          "display": "standalone",
+          "background_color": "#F9FAFB",
+          "theme_color": "#4F46E5",
+          "orientation": "portrait",
+          "icons": [
+            {
+              "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%234F46E5'/%3E%3Ctext x='256' y='380' font-size='280' text-anchor='middle' fill='white'%3E📖%3C/text%3E%3C/svg%3E",
+              "sizes": "512x512",
+              "type": "image/svg+xml",
+              "purpose": "any maskable"
+            }
+          ]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
+        const manifestUrl = URL.createObjectURL(manifestBlob);
+        document.getElementById('manifest-pwa').setAttribute('href', manifestUrl);
+
+        // 2. Service Worker 인라인 정의 및 등록
+        const swCode = `
+            const CACHE_NAME = 'psalm119-v2';
+            const urlsToCache = [
+                './psalm119_pwa_single.html', // 이 파일 자체를 캐시
+                // 외부 라이브러리도 캐시하려면 여기에 추가해야 합니다.
+            ];
+
+            // 설치: 캐시 파일 목록에 필요한 리소스를 저장
+            self.addEventListener('install', event => {
+              event.waitUntil(
+                caches.open(CACHE_NAME)
+                  .then(cache => cache.addAll(urlsToCache))
+                  .catch(err => console.error('Service Worker Install Error:', err))
+              );
+            });
+
+            // 활성화: 이전 버전 캐시 정리
+            self.addEventListener('activate', event => {
+              event.waitUntil(
+                caches.keys().then(cacheNames => {
+                  return Promise.all(
+                    cacheNames.map(cacheName => {
+                      if (cacheName !== CACHE_NAME) {
+                        return caches.delete(cacheName);
+                      }
+                    })
+                  );
+                })
+              );
+            });
+
+            // 요청 가로채기: 네트워크 연결이 없을 때 캐시된 리소스로 응답
+            self.addEventListener('fetch', event => {
+              // PWA 설치를 위해 메인 HTML 파일만 캐시에서 로드하도록 단순화
+              if (event.request.url.includes('psalm119_pwa_single.html')) {
+                event.respondWith(
+                    caches.match(event.request)
+                      .then(response => response || fetch(event.request))
+                );
+              }
+            });
+        `;
+
+        const swBlob = new Blob([swCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(swBlob);
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register(swUrl)
+                    .then(reg => {
+                        console.log('Service Worker 등록 성공:', reg.scope);
+                        // Service Worker가 등록되면 PWA 설치 프롬프트가 더 잘 작동합니다.
+                    })
+                    .catch(err => console.log('Service Worker 등록 실패:', err));
+            });
+        }
     </script>
 </body>
 </html>
